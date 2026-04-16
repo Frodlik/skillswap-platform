@@ -1,0 +1,112 @@
+server:
+  port: ${API_GATEWAY_PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  threads:
+    virtual:
+      enabled: true
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          # Global CORS — applies to all routes
+          cors:
+            "[/**]":
+              allowedOrigins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+              allowedMethods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+              allowedHeaders: "*"
+              allowCredentials: true
+              maxAge: 3600
+      # Discovery-based routing (lb://service-name)
+      discovery:
+        locator:
+          enabled: false          # manual routes preferred for explicit control
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: auth-service
+                fallbackUri: forward:/fallback/auth
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: user-service
+                fallbackUri: forward:/fallback/user
+
+        - id: skill-service
+          uri: lb://skill-service
+          predicates:
+            - Path=/api/v1/skills/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: skill-service
+                fallbackUri: forward:/fallback/skill
+
+        - id: matching-service
+          uri: lb://matching-service
+          predicates:
+            - Path=/api/v1/matches/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: matching-service
+                fallbackUri: forward:/fallback/matching
+
+        - id: session-service
+          uri: lb://session-service
+          predicates:
+            - Path=/api/v1/sessions/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: session-service
+                fallbackUri: forward:/fallback/session
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+    instances:
+      auth-service:
+        baseConfig: default
+      user-service:
+        baseConfig: default
+      skill-service:
+        baseConfig: default
+      matching-service:
+        baseConfig: default
+      session-service:
+        baseConfig: default
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka:eureka@${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
