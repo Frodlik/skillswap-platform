@@ -110,3 +110,11 @@ management:
   endpoint:
     health:
       show-details: always
+
+jwt:
+  public-key: classpath:keys/public.pem
+  public-paths:
+    - /api/v1/auth/**
+    - /actuator/health
+    - /actuator/info
+    - /fallback/**
