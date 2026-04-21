@@ -11,11 +11,11 @@ import org.springframework.security.web.SecurityFilterChain;
 class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http) {
         return http
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/eureka/**"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/eureka/**"))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated())
                 .httpBasic(basic -> {})
                 .build();

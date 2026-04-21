@@ -9,8 +9,8 @@ spring:
       enabled: true
   security:
     user:
-      name: eureka
-      password: eureka
+      name: ${EUREKA_USER:eureka}
+      password: ${EUREKA_PASSWORD:eureka}
 
 management:
   endpoints:
@@ -29,7 +29,7 @@ eureka:
     register-with-eureka: false
     fetch-registry: false
     service-url:
-      defaultZone: http://eureka:eureka@${eureka.instance.hostname}:${server.port}/eureka/
+      defaultZone: http://${spring.security.user.name}:${spring.security.user.password}@${eureka.instance.hostname}:${server.port}/eureka/
   server:
     enable-self-preservation: false
     eviction-interval-timer-in-ms: 5000
