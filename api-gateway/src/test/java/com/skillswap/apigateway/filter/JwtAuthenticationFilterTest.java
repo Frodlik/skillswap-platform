@@ -148,4 +148,20 @@ class JwtAuthenticationFilterTest {
         assertThat(chain.getRequest()).isNotNull();
         assertThat(response.getStatus()).isEqualTo(200);
     }
+
+    @Test
+    void publicPath_shouldStripSpoofedUserHeaders() throws Exception {
+        var request = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        request.addHeader("X-User-Id", "attacker-id");
+        request.addHeader("X-User-Role", "ADMIN");
+        var response = new MockHttpServletResponse();
+        var chain = new MockFilterChain();
+
+        filter.doFilterInternal(request, response, chain);
+
+        assertThat(chain.getRequest()).isNotNull();
+        HttpServletRequest forwarded = (HttpServletRequest) chain.getRequest();
+        assertThat(forwarded.getHeader("X-User-Id")).isNull();
+        assertThat(forwarded.getHeader("X-User-Role")).isNull();
+    }
 }

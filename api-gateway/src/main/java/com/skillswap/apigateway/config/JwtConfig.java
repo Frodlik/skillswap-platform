@@ -19,6 +19,9 @@ class JwtConfig {
 
     @Bean
     RSAPublicKey jwtPublicKey(JwtProperties properties) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        if (properties.publicKey() == null) {
+            throw new IllegalStateException("jwt.public-key must be configured");
+        }
         byte[] keyBytes;
         try (var stream = properties.publicKey().getInputStream()) {
             keyBytes = stream.readAllBytes();

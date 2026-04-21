@@ -40,7 +40,7 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
 
         if (isPublicPath(uri)) {
-            chain.doFilter(request, response);
+            chain.doFilter(new StrippedHeaderRequestWrapper(request), response);
             return;
         }
 
@@ -84,6 +84,33 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
                 "path", path,
                 "timestamp", Instant.now().toString()
         ));
+    }
+
+    private static class StrippedHeaderRequestWrapper extends HttpServletRequestWrapper {
+        private static final Set<String> BLOCKED = Set.of("X-User-Id", "X-User-Role");
+
+        StrippedHeaderRequestWrapper(HttpServletRequest request) {
+            super(request);
+        }
+
+        @Override
+        public String getHeader(String name) {
+            return BLOCKED.contains(name) ? null : super.getHeader(name);
+        }
+
+        @Override
+        public Enumeration<String> getHeaders(String name) {
+            return BLOCKED.contains(name) ? Collections.emptyEnumeration() : super.getHeaders(name);
+        }
+
+        @Override
+        public Enumeration<String> getHeaderNames() {
+            return Collections.enumeration(
+                    Collections.list(super.getHeaderNames()).stream()
+                            .filter(n -> !BLOCKED.contains(n))
+                            .toList()
+            );
+        }
     }
 
     private static class HeaderEnrichingRequestWrapper extends HttpServletRequestWrapper {
