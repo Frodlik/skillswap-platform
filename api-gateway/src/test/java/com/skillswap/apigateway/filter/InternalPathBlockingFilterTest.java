@@ -1,5 +1,6 @@
 package com.skillswap.apigateway.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
@@ -14,7 +15,7 @@ class InternalPathBlockingFilterTest {
 
     @BeforeEach
     void setUp() {
-        filter = new InternalPathBlockingFilter();
+        filter = new InternalPathBlockingFilter(new ObjectMapper());
     }
 
     @Test
@@ -34,6 +35,18 @@ class InternalPathBlockingFilterTest {
     @Test
     void shouldReturn403ForDeepInternalSubPath() throws Exception {
         var request = new MockHttpServletRequest("POST", "/internal/admin/config/reset");
+        var response = new MockHttpServletResponse();
+        var chain = new MockFilterChain();
+
+        filter.doFilterInternal(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(chain.getRequest()).isNull();
+    }
+
+    @Test
+    void shouldReturn403ForBareInternalPath() throws Exception {
+        var request = new MockHttpServletRequest("GET", "/internal");
         var response = new MockHttpServletResponse();
         var chain = new MockFilterChain();
 

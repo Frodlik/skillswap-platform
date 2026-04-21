@@ -1,5 +1,6 @@
 package com.skillswap.apigateway.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,21 +11,31 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Map;
 
 @Component
 @Order(1)
 class InternalPathBlockingFilter extends OncePerRequestFilter {
 
+    private final ObjectMapper objectMapper;
+
+    InternalPathBlockingFilter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
-        if (request.getRequestURI().startsWith("/internal/")) {
+        if (request.getRequestURI().startsWith("/internal")) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
-            response.getWriter().write("""
-                    {"status":403,"message":"Access denied","path":"%s","timestamp":"%s"}"""
-                    .formatted(request.getRequestURI(), Instant.now()));
+            objectMapper.writeValue(response.getWriter(), Map.of(
+                    "status", 403,
+                    "message", "Access denied",
+                    "path", request.getRequestURI(),
+                    "timestamp", Instant.now().toString()
+            ));
             return;
         }
         chain.doFilter(request, response);
