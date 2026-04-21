@@ -45,8 +45,12 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (header == null || !header.startsWith("Bearer ")) {
-            sendUnauthorized(response, uri, "Missing or invalid Authorization header");
+        if (header == null) {
+            sendUnauthorized(response, uri, "Missing Authorization header");
+            return;
+        }
+        if (!header.startsWith("Bearer ")) {
+            sendUnauthorized(response, uri, "Invalid Authorization scheme");
             return;
         }
 
@@ -58,7 +62,7 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .getPayload();
 
             String userId = claims.getSubject();
-            String role = claims.get("role", String.class);
+            String role = Objects.requireNonNullElse(claims.get("role", String.class), "");
             chain.doFilter(new HeaderEnrichingRequestWrapper(request, userId, role), response);
         } catch (JwtException e) {
             sendUnauthorized(response, uri, "Invalid or expired token");
@@ -67,7 +71,7 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean isPublicPath(String uri) {
         return publicPaths.stream().anyMatch(pattern -> pattern.endsWith("/**")
-                ? uri.startsWith(pattern.substring(0, pattern.length() - 3))
+                ? uri.startsWith(pattern.substring(0, pattern.length() - 2))
                 : uri.equals(pattern));
     }
 
@@ -105,7 +109,7 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         @Override
         public Enumeration<String> getHeaderNames() {
-            var names = new ArrayList<>(Collections.list(super.getHeaderNames()));
+            var names = new LinkedHashSet<>(Collections.list(super.getHeaderNames()));
             names.addAll(extra.keySet());
             return Collections.enumeration(names);
         }
