@@ -87,7 +87,7 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private static class StrippedHeaderRequestWrapper extends HttpServletRequestWrapper {
-        private static final Set<String> BLOCKED = Set.of("X-User-Id", "X-User-Role");
+        private static final Set<String> BLOCKED = Set.of("x-user-id", "x-user-role");
 
         StrippedHeaderRequestWrapper(HttpServletRequest request) {
             super(request);
@@ -95,21 +95,19 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         @Override
         public String getHeader(String name) {
-            return BLOCKED.contains(name) ? null : super.getHeader(name);
+            return BLOCKED.contains(name.toLowerCase()) ? null : super.getHeader(name);
         }
 
         @Override
         public Enumeration<String> getHeaders(String name) {
-            return BLOCKED.contains(name) ? Collections.emptyEnumeration() : super.getHeaders(name);
+            return BLOCKED.contains(name.toLowerCase()) ? Collections.emptyEnumeration() : super.getHeaders(name);
         }
 
         @Override
         public Enumeration<String> getHeaderNames() {
-            return Collections.enumeration(
-                    Collections.list(super.getHeaderNames()).stream()
-                            .filter(n -> !BLOCKED.contains(n))
-                            .toList()
-            );
+            var names = Collections.list(super.getHeaderNames());
+            names.removeIf(n -> BLOCKED.contains(n.toLowerCase()));
+            return Collections.enumeration(names);
         }
     }
 
@@ -118,18 +116,19 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         HeaderEnrichingRequestWrapper(HttpServletRequest request, String userId, String role) {
             super(request);
-            this.extra = Map.of("X-User-Id", userId, "X-User-Role", role);
+            this.extra = Map.of("x-user-id", userId, "x-user-role", role);
         }
 
         @Override
         public String getHeader(String name) {
-            return extra.getOrDefault(name, super.getHeader(name));
+            return extra.getOrDefault(name.toLowerCase(), super.getHeader(name));
         }
 
         @Override
         public Enumeration<String> getHeaders(String name) {
-            if (extra.containsKey(name)) {
-                return Collections.enumeration(List.of(extra.get(name)));
+            String key = name.toLowerCase();
+            if (extra.containsKey(key)) {
+                return Collections.enumeration(List.of(extra.get(key)));
             }
             return super.getHeaders(name);
         }

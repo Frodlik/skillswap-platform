@@ -16,7 +16,7 @@ spring:
       minimum-idle: 2
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create-drop
     open-in-view: false
     properties:
       hibernate:
@@ -32,8 +32,8 @@ spring:
     password: ${RABBITMQ_PASSWORD:guest}
 
 jwt:
-  private-key: classpath:keys/private.pem
-  public-key: classpath:keys/public.pem
+  private-key: classpath:private.pem
+  public-key: classpath:public.pem
   access-token-expiry: PT15M
   refresh-token-expiry: P7D
 

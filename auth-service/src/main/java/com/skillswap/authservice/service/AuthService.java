@@ -15,6 +15,7 @@ import com.skillswap.authservice.exception.InvalidCredentialsException;
 import com.skillswap.authservice.exception.InvalidTokenException;
 import com.skillswap.authservice.repository.CredentialsRepository;
 import com.skillswap.authservice.repository.RefreshTokenRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,20 +38,20 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-    private final EventPublisher eventPublisher;
+    private final ApplicationEventPublisher applicationEventPublisher;
     private final long refreshTokenExpirySeconds;
 
     public AuthService(CredentialsRepository credentialsRepository,
                        RefreshTokenRepository refreshTokenRepository,
                        JwtService jwtService,
                        PasswordEncoder passwordEncoder,
-                       EventPublisher eventPublisher,
+                       ApplicationEventPublisher applicationEventPublisher,
                        JwtProperties jwtProperties) {
         this.credentialsRepository = credentialsRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
-        this.eventPublisher = eventPublisher;
+        this.applicationEventPublisher = applicationEventPublisher;
         this.refreshTokenExpirySeconds = jwtProperties.refreshTokenExpiry().toSeconds();
     }
 
@@ -70,8 +71,8 @@ public class AuthService {
         credentialsRepository.save(credentials);
         log.info("Registered new user id={}", credentials.getId());
 
-        eventPublisher.publish(new UserRegisteredEvent(
-                credentials.getId(), credentials.getEmail(), Instant.now()));
+        applicationEventPublisher.publishEvent(
+                new UserRegisteredEvent(credentials.getId(), credentials.getEmail(), Instant.now()));
 
         return issueTokenPair(credentials);
     }
