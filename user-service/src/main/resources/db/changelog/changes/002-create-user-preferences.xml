@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="002-create-user-preferences" author="skillswap">
+        <createTable tableName="user_preferences">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" primaryKeyName="pk_user_preferences" nullable="false"/>
+            </column>
+            <column name="user_id" type="UUID">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uc_user_prefs_user_id"
+                             foreignKeyName="fk_user_prefs_profile" references="profiles(user_id)"/>
+            </column>
+            <column name="preferred_languages" type="text[]"/>
+            <column name="preferred_timezone_range" type="VARCHAR(100)"/>
+            <column name="availability_schedule" type="jsonb"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
