@@ -6,6 +6,7 @@ import com.skillswap.userservice.dto.response.PreferenceResponse;
 import com.skillswap.userservice.dto.response.ProfileResponse;
 import com.skillswap.userservice.service.ProfileService;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,13 +21,10 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users")
+@AllArgsConstructor
 public class UserController {
 
     private final ProfileService profileService;
-
-    public UserController(ProfileService profileService) {
-        this.profileService = profileService;
-    }
 
     @GetMapping("/{id}")
     ProfileResponse getProfile(@PathVariable UUID id) {

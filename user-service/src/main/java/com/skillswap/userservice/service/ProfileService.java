@@ -12,6 +12,7 @@ import com.skillswap.userservice.event.UserRegisteredEvent;
 import com.skillswap.userservice.exception.ProfileNotFoundException;
 import com.skillswap.userservice.repository.ProfileRepository;
 import com.skillswap.userservice.repository.UserPreferenceRepository;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -20,9 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @Service
+@AllArgsConstructor
 public class ProfileService {
 
     private static final Logger log = LoggerFactory.getLogger(ProfileService.class);
@@ -30,14 +35,6 @@ public class ProfileService {
     private final ProfileRepository profileRepository;
     private final UserPreferenceRepository userPreferenceRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
-
-    public ProfileService(ProfileRepository profileRepository,
-                          UserPreferenceRepository userPreferenceRepository,
-                          ApplicationEventPublisher applicationEventPublisher) {
-        this.profileRepository = profileRepository;
-        this.userPreferenceRepository = userPreferenceRepository;
-        this.applicationEventPublisher = applicationEventPublisher;
-    }
 
     @Transactional(readOnly = true)
     public ProfileResponse getProfile(UUID userId) {
@@ -53,30 +50,12 @@ public class ProfileService {
 
         List<String> changedFields = new ArrayList<>();
 
-        if (request.displayName() != null && !request.displayName().equals(profile.getDisplayName())) {
-            profile.setDisplayName(request.displayName());
-            changedFields.add("displayName");
-        }
-        if (request.bio() != null && !request.bio().equals(profile.getBio())) {
-            profile.setBio(request.bio());
-            changedFields.add("bio");
-        }
-        if (request.avatarUrl() != null && !request.avatarUrl().equals(profile.getAvatarUrl())) {
-            profile.setAvatarUrl(request.avatarUrl());
-            changedFields.add("avatarUrl");
-        }
-        if (request.timezone() != null && !request.timezone().equals(profile.getTimezone())) {
-            profile.setTimezone(request.timezone());
-            changedFields.add("timezone");
-        }
-        if (request.language() != null && !request.language().equals(profile.getLanguage())) {
-            profile.setLanguage(request.language());
-            changedFields.add("language");
-        }
-        if (request.location() != null && !request.location().equals(profile.getLocation())) {
-            profile.setLocation(request.location());
-            changedFields.add("location");
-        }
+        applyIfChanged(request.displayName(), profile.getDisplayName(), profile::setDisplayName, "displayName", changedFields);
+        applyIfChanged(request.bio(), profile.getBio(), profile::setBio, "bio", changedFields);
+        applyIfChanged(request.avatarUrl(), profile.getAvatarUrl(), profile::setAvatarUrl, "avatarUrl", changedFields);
+        applyIfChanged(request.timezone(), profile.getTimezone(), profile::setTimezone, "timezone", changedFields);
+        applyIfChanged(request.language(), profile.getLanguage(), profile::setLanguage, "language", changedFields);
+        applyIfChanged(request.location(), profile.getLocation(), profile::setLocation, "location", changedFields);
 
         if (!changedFields.isEmpty()) {
             profileRepository.save(profile);
@@ -99,15 +78,9 @@ public class ProfileService {
         UserPreference prefs = userPreferenceRepository.findByUserId(userId)
                 .orElseThrow(() -> new ProfileNotFoundException("Preferences not found for userId=" + userId));
 
-        if (request.preferredLanguages() != null) {
-            prefs.setPreferredLanguages(request.preferredLanguages());
-        }
-        if (request.preferredTimezoneRange() != null) {
-            prefs.setPreferredTimezoneRange(request.preferredTimezoneRange());
-        }
-        if (request.availabilitySchedule() != null) {
-            prefs.setAvailabilitySchedule(request.availabilitySchedule());
-        }
+        Optional.ofNullable(request.preferredLanguages()).ifPresent(prefs::setPreferredLanguages);
+        Optional.ofNullable(request.preferredTimezoneRange()).ifPresent(prefs::setPreferredTimezoneRange);
+        Optional.ofNullable(request.availabilitySchedule()).ifPresent(prefs::setAvailabilitySchedule);
 
         userPreferenceRepository.save(prefs);
         return toPreferenceResponse(prefs);
@@ -163,5 +136,12 @@ public class ProfileService {
         return new PreferenceResponse(
                 p.getId(), p.getUserId(), p.getPreferredLanguages(),
                 p.getPreferredTimezoneRange(), p.getAvailabilitySchedule());
+    }
+
+    private <T> void applyIfChanged(T newVal, T oldVal, Consumer<T> setter, String field, List<String> changed) {
+        if (newVal != null && !Objects.equals(newVal, oldVal)) {
+            setter.accept(newVal);
+            changed.add(field);
+        }
     }
 }
