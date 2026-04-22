@@ -78,9 +78,8 @@ public class ProfileService {
             changedFields.add("location");
         }
 
-        profileRepository.save(profile);
-
         if (!changedFields.isEmpty()) {
+            profileRepository.save(profile);
             applicationEventPublisher.publishEvent(new ProfileUpdated(userId, changedFields));
         }
 
@@ -98,7 +97,7 @@ public class ProfileService {
     @Transactional
     public PreferenceResponse updatePreferences(UUID userId, PreferenceUpdateRequest request) {
         UserPreference prefs = userPreferenceRepository.findByUserId(userId)
-                .orElseThrow(() -> new ProfileNotFoundException(userId));
+                .orElseThrow(() -> new ProfileNotFoundException("Preferences not found for userId=" + userId));
 
         if (request.preferredLanguages() != null) {
             prefs.setPreferredLanguages(request.preferredLanguages());
@@ -118,7 +117,7 @@ public class ProfileService {
     public PreferenceResponse getPreferences(UUID userId) {
         return userPreferenceRepository.findByUserId(userId)
                 .map(this::toPreferenceResponse)
-                .orElseThrow(() -> new ProfileNotFoundException(userId));
+                .orElseThrow(() -> new ProfileNotFoundException("Preferences not found for userId=" + userId));
     }
 
     @Transactional(readOnly = true)

@@ -6,6 +6,7 @@ import com.skillswap.userservice.dto.request.PreferenceUpdateRequest;
 import com.skillswap.userservice.dto.request.UpdateProfileRequest;
 import com.skillswap.userservice.dto.response.PreferenceResponse;
 import com.skillswap.userservice.dto.response.ProfileResponse;
+import com.skillswap.userservice.dto.response.UserBriefResponse;
 import com.skillswap.userservice.event.ProfileUpdated;
 import com.skillswap.userservice.event.UserRegisteredEvent;
 import com.skillswap.userservice.exception.ProfileNotFoundException;
@@ -21,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -96,7 +98,6 @@ class ProfileServiceTest {
             UUID userId = UUID.randomUUID();
             Profile profile = buildProfile(userId);
             when(profileRepository.findByUserId(userId)).thenReturn(Optional.of(profile));
-            when(profileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             UpdateProfileRequest request = new UpdateProfileRequest(
                     "testuser", null, null, null, null, null);
@@ -182,6 +183,58 @@ class ProfileServiceTest {
             ArgumentCaptor<UserPreference> prefCap = ArgumentCaptor.forClass(UserPreference.class);
             verify(userPreferenceRepository).save(prefCap.capture());
             assertThat(prefCap.getValue().getUserId()).isEqualTo(userId);
+        }
+    }
+
+    // ---- searchProfiles ----
+
+    @Nested
+    class SearchProfiles {
+
+        @Test
+        void withBothFilters_returnsMatchingProfiles() {
+            UUID userId = UUID.randomUUID();
+            Profile profile = buildProfile(userId);
+            when(profileRepository.search("en", "UTC")).thenReturn(List.of(profile));
+
+            List<ProfileResponse> results = profileService.searchProfiles("en", "UTC");
+
+            assertThat(results).hasSize(1);
+            assertThat(results.get(0).userId()).isEqualTo(userId);
+        }
+    }
+
+    // ---- getPreferences ----
+
+    @Nested
+    class GetPreferences {
+
+        @Test
+        void found_returnsPreferenceResponse() {
+            UUID userId = UUID.randomUUID();
+            UserPreference prefs = buildPrefs(userId);
+            when(userPreferenceRepository.findByUserId(userId)).thenReturn(Optional.of(prefs));
+
+            PreferenceResponse response = profileService.getPreferences(userId);
+
+            assertThat(response.userId()).isEqualTo(userId);
+        }
+    }
+
+    // ---- getBrief ----
+
+    @Nested
+    class GetBrief {
+
+        @Test
+        void found_returnsUserBriefResponse() {
+            UUID userId = UUID.randomUUID();
+            when(profileRepository.findByUserId(userId)).thenReturn(Optional.of(buildProfile(userId)));
+
+            var response = profileService.getBrief(userId);
+
+            assertThat(response.userId()).isEqualTo(userId);
+            assertThat(response.displayName()).isEqualTo("testuser");
         }
     }
 

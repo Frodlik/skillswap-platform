@@ -5,6 +5,7 @@ import com.skillswap.userservice.dto.request.UpdateProfileRequest;
 import com.skillswap.userservice.dto.response.PreferenceResponse;
 import com.skillswap.userservice.dto.response.ProfileResponse;
 import com.skillswap.userservice.service.ProfileService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,7 +35,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     ProfileResponse updateProfile(@PathVariable UUID id,
-                                  @RequestBody UpdateProfileRequest request) {
+                                  @Valid @RequestBody UpdateProfileRequest request) {
         return profileService.updateProfile(id, request);
     }
 
@@ -46,7 +47,7 @@ public class UserController {
 
     @PatchMapping("/{id}/preferences")
     PreferenceResponse updatePreferences(@PathVariable UUID id,
-                                         @RequestBody PreferenceUpdateRequest request) {
+                                         @Valid @RequestBody PreferenceUpdateRequest request) {
         return profileService.updatePreferences(id, request);
     }
 }
