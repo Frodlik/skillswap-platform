@@ -12,7 +12,7 @@
             </column>
             <column name="user_id" type="UUID">
                 <constraints nullable="false" unique="true" uniqueConstraintName="uc_user_prefs_user_id"
-                             foreignKeyName="fk_user_prefs_profile" references="profiles(id)"/>
+                             foreignKeyName="fk_user_prefs_profile" references="profiles(user_id)"/>
             </column>
             <column name="preferred_languages" type="text[]"/>
             <column name="preferred_timezone_range" type="VARCHAR(100)"/>

@@ -19,7 +19,7 @@
             <column name="timezone" type="VARCHAR(100)"/>
             <column name="language" type="VARCHAR(10)"/>
             <column name="location" type="VARCHAR(200)"/>
-            <column name="rating" type="NUMERIC(3,2)" defaultValue="NULL"/>
+            <column name="rating" type="NUMERIC(3,2)"/>
             <column name="created_at" type="TIMESTAMPTZ">
                 <constraints nullable="false"/>
             </column>
