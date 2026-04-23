@@ -47,6 +47,9 @@
         <sql>
             CREATE INDEX idx_user_skills_tags_gin ON user_skills USING GIN (tags);
         </sql>
+        <rollback>
+            DROP INDEX IF EXISTS idx_user_skills_tags_gin;
+        </rollback>
     </changeSet>
 
 </databaseChangeLog>
