@@ -1,5 +1,6 @@
 package com.skillswap.skillservice.controller;
 
+import com.skillswap.skillservice.domain.SkillType;
 import com.skillswap.skillservice.dto.request.SkillCreateRequest;
 import com.skillswap.skillservice.dto.response.CategoryResponse;
 import com.skillswap.skillservice.dto.response.SkillResponse;
@@ -36,14 +37,14 @@ public class SkillController {
     @ResponseStatus(HttpStatus.CREATED)
     SkillResponse addOffer(@PathVariable UUID userId,
                            @Valid @RequestBody SkillCreateRequest request) {
-        return skillService.addSkill(userId, request);
+        return skillService.addSkill(userId, request, SkillType.OFFER);
     }
 
     @PostMapping("/user/{userId}/want")
     @ResponseStatus(HttpStatus.CREATED)
     SkillResponse addWant(@PathVariable UUID userId,
                           @Valid @RequestBody SkillCreateRequest request) {
-        return skillService.addSkill(userId, request);
+        return skillService.addSkill(userId, request, SkillType.WANT);
     }
 
     @GetMapping("/user/{userId}")

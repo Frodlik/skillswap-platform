@@ -1,6 +1,5 @@
 package com.skillswap.skillservice.repository;
 
-import com.skillswap.skillservice.domain.SkillType;
 import com.skillswap.skillservice.domain.UserSkill;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,8 +11,6 @@ import java.util.UUID;
 public interface UserSkillRepository extends JpaRepository<UserSkill, UUID> {
 
     List<UserSkill> findByUserId(UUID userId);
-
-    List<UserSkill> findByUserIdAndType(UUID userId, SkillType type);
 
     @Query(value = """
             SELECT * FROM user_skills us

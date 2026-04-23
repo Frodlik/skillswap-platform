@@ -21,16 +21,19 @@ public class SkillEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(SkillCreatedEvent event) {
         switch (event) {
-            case SkillCreatedEvent.Offered(var payload) -> {
-                rabbitTemplate.convertAndSend(
-                        RabbitMqConfig.EXCHANGE, RabbitMqConfig.SKILL_OFFERED_KEY, payload);
-                log.info("Published '{}' skillId={}", RabbitMqConfig.SKILL_OFFERED_KEY, payload.skillId());
-            }
-            case SkillCreatedEvent.Wanted(var payload) -> {
-                rabbitTemplate.convertAndSend(
-                        RabbitMqConfig.EXCHANGE, RabbitMqConfig.SKILL_WANTED_KEY, payload);
-                log.info("Published '{}' skillId={}", RabbitMqConfig.SKILL_WANTED_KEY, payload.skillId());
-            }
+            case SkillCreatedEvent.Offered(var payload) -> publish(
+                    RabbitMqConfig.SKILL_OFFERED_KEY, payload, payload.skillId());
+            case SkillCreatedEvent.Wanted(var payload) -> publish(
+                    RabbitMqConfig.SKILL_WANTED_KEY, payload, payload.skillId());
+        }
+    }
+
+    private void publish(String routingKey, Object payload, java.util.UUID skillId) {
+        try {
+            rabbitTemplate.convertAndSend(RabbitMqConfig.EXCHANGE, routingKey, payload);
+            log.info("Published '{}' skillId={}", routingKey, skillId);
+        } catch (org.springframework.amqp.AmqpException ex) {
+            log.error("Failed to publish '{}' skillId={} — event lost", routingKey, skillId, ex);
         }
     }
 }

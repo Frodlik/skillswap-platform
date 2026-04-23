@@ -9,6 +9,6 @@ import java.util.UUID;
 
 public interface SkillCategoryRepository extends JpaRepository<SkillCategory, UUID> {
 
-    @Query("SELECT c FROM SkillCategory c WHERE c.parent IS NULL")
+    @Query("SELECT c FROM SkillCategory c LEFT JOIN FETCH c.children WHERE c.parent IS NULL")
     List<SkillCategory> findRoots();
 }

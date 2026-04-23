@@ -84,7 +84,7 @@ class SkillServiceTest {
             SkillCreateRequest req = new SkillCreateRequest(
                     "Spring Boot", cat.getId(), 4, SkillType.OFFER, List.of("java", "spring"), null);
 
-            SkillResponse resp = skillService.addSkill(userId, req);
+            SkillResponse resp = skillService.addSkill(userId, req, SkillType.OFFER);
 
             assertThat(resp.name()).isEqualTo("Spring Boot");
             assertThat(resp.type()).isEqualTo(SkillType.OFFER);
@@ -105,7 +105,7 @@ class SkillServiceTest {
             SkillCreateRequest req = new SkillCreateRequest(
                     "React", cat.getId(), 2, SkillType.WANT, List.of("react"), null);
 
-            skillService.addSkill(userId, req);
+            skillService.addSkill(userId, req, SkillType.WANT);
 
             ArgumentCaptor<SkillCreatedEvent> captor = ArgumentCaptor.forClass(SkillCreatedEvent.class);
             verify(eventPublisher).publishEvent(captor.capture());
@@ -121,7 +121,7 @@ class SkillServiceTest {
             SkillCreateRequest req = new SkillCreateRequest(
                     "Go", catId, 3, SkillType.OFFER, null, null);
 
-            assertThatThrownBy(() -> skillService.addSkill(userId, req))
+            assertThatThrownBy(() -> skillService.addSkill(userId, req, SkillType.OFFER))
                     .isInstanceOf(CategoryNotFoundException.class);
             verify(userSkillRepository, never()).save(any());
         }
@@ -136,7 +136,7 @@ class SkillServiceTest {
             SkillCreateRequest req = new SkillCreateRequest(
                     "Guitar", cat.getId(), 3, SkillType.OFFER, null, null);
 
-            SkillResponse resp = skillService.addSkill(userId, req);
+            SkillResponse resp = skillService.addSkill(userId, req, SkillType.OFFER);
             assertThat(resp.tags()).isEmpty();
         }
     }

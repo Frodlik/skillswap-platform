@@ -42,7 +42,7 @@ public class SkillService {
     }
 
     @Transactional
-    public SkillResponse addSkill(UUID userId, SkillCreateRequest request) {
+    public SkillResponse addSkill(UUID userId, SkillCreateRequest request, SkillType overrideType) {
         SkillCategory category = skillCategoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new CategoryNotFoundException(request.categoryId()));
 
@@ -55,7 +55,7 @@ public class SkillService {
                 .category(category)
                 .skillName(request.name())
                 .skillLevel(request.level())
-                .type(request.type())
+                .type(overrideType)
                 .tags(tagsArray)
                 .description(request.description())
                 .build();
@@ -63,7 +63,7 @@ public class SkillService {
         userSkillRepository.save(skill);
 
         List<String> tagsList = Arrays.asList(tagsArray);
-        SkillCreatedEvent domainEvent = switch (request.type()) {
+        SkillCreatedEvent domainEvent = switch (overrideType) {
             case OFFER -> new SkillCreatedEvent.Offered(
                     new SkillOffered(userId, skill.getId(), skill.getSkillName(), tagsList));
             case WANT -> new SkillCreatedEvent.Wanted(
