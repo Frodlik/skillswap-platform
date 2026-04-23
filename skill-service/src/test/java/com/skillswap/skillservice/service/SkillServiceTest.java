@@ -170,22 +170,24 @@ class SkillServiceTest {
 
         @Test
         void existingSkill_deleted() {
-            UUID skillId = UUID.randomUUID();
-            when(userSkillRepository.existsById(skillId)).thenReturn(true);
+            UUID userId = UUID.randomUUID();
+            SkillCategory cat = buildCategory(UUID.randomUUID(), "Design", List.of());
+            UserSkill skill = buildSkill(userId, cat, SkillType.OFFER);
+            when(userSkillRepository.findById(skill.getId())).thenReturn(Optional.of(skill));
 
-            skillService.deleteSkill(skillId);
+            skillService.deleteSkill(skill.getId());
 
-            verify(userSkillRepository).deleteById(skillId);
+            verify(userSkillRepository).delete(skill);
         }
 
         @Test
         void unknownSkill_throwsSkillNotFoundException() {
             UUID skillId = UUID.randomUUID();
-            when(userSkillRepository.existsById(skillId)).thenReturn(false);
+            when(userSkillRepository.findById(skillId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> skillService.deleteSkill(skillId))
                     .isInstanceOf(SkillNotFoundException.class);
-            verify(userSkillRepository, never()).deleteById(any());
+            verify(userSkillRepository, never()).delete(any());
         }
     }
 

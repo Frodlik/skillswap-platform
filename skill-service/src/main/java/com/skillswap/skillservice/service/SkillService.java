@@ -84,10 +84,9 @@ public class SkillService {
 
     @Transactional
     public void deleteSkill(UUID skillId) {
-        if (!userSkillRepository.existsById(skillId)) {
-            throw new SkillNotFoundException(skillId);
-        }
-        userSkillRepository.deleteById(skillId);
+        UserSkill skill = userSkillRepository.findById(skillId)
+                .orElseThrow(() -> new SkillNotFoundException(skillId));
+        userSkillRepository.delete(skill);
         log.info("Deleted skillId={}", skillId);
     }
 
@@ -106,7 +105,7 @@ public class SkillService {
     }
 
     private SkillResponse toSkillResponse(UserSkill s) {
-        List<String> tags = s.getTags() == null ? List.of() : Arrays.asList(s.getTags());
+        List<String> tags = s.getTags() == null ? List.of() : Arrays.stream(s.getTags()).toList();
         return new SkillResponse(
                 s.getId(), s.getUserId(),
                 s.getCategory().getId(), s.getCategory().getName(),
