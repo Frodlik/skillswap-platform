@@ -1,6 +1,7 @@
 package com.skillswap.skillservice.dto.request;
 
 import com.skillswap.skillservice.domain.SkillType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -12,8 +13,8 @@ import java.util.UUID;
 public record SkillCreateRequest(
         @NotBlank String name,
         @NotNull UUID categoryId,
-        @Min(1) @Max(5) int level,
+        @NotNull @Min(1) @Max(5) Integer level,
         @NotNull SkillType type,
-        List<String> tags,
+        @Valid List<@NotBlank String> tags,
         String description
 ) {}
