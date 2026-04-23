@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="001-seed-categories" author="skillswap" context="!test">
+        <!-- Root categories -->
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000001"/>
+            <column name="name" value="Programming"/>
+            <column name="icon" value="code"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000002"/>
+            <column name="name" value="Design"/>
+            <column name="icon" value="palette"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000003"/>
+            <column name="name" value="Languages"/>
+            <column name="icon" value="translate"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000004"/>
+            <column name="name" value="Music"/>
+            <column name="icon" value="music_note"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000005"/>
+            <column name="name" value="Business"/>
+            <column name="icon" value="business"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000006"/>
+            <column name="name" value="Marketing"/>
+            <column name="icon" value="campaign"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000007"/>
+            <column name="name" value="Data Science"/>
+            <column name="icon" value="analytics"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000008"/>
+            <column name="name" value="Photography"/>
+            <column name="icon" value="camera_alt"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000009"/>
+            <column name="name" value="Cooking"/>
+            <column name="icon" value="restaurant"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000010"/>
+            <column name="name" value="Fitness"/>
+            <column name="icon" value="fitness_center"/>
+        </insert>
+
+        <!-- Programming sub-categories -->
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000011"/>
+            <column name="name" value="Backend"/>
+            <column name="parent_id" value="00000000-0000-0000-0000-000000000001"/>
+            <column name="icon" value="dns"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000012"/>
+            <column name="name" value="Frontend"/>
+            <column name="parent_id" value="00000000-0000-0000-0000-000000000001"/>
+            <column name="icon" value="web"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000013"/>
+            <column name="name" value="Mobile"/>
+            <column name="parent_id" value="00000000-0000-0000-0000-000000000001"/>
+            <column name="icon" value="smartphone"/>
+        </insert>
+        <insert tableName="skill_categories">
+            <column name="id" value="00000000-0000-0000-0000-000000000014"/>
+            <column name="name" value="DevOps"/>
+            <column name="parent_id" value="00000000-0000-0000-0000-000000000001"/>
+            <column name="icon" value="cloud"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
