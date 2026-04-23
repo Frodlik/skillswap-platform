@@ -6,7 +6,6 @@ import com.skillswap.userservice.dto.request.PreferenceUpdateRequest;
 import com.skillswap.userservice.dto.request.UpdateProfileRequest;
 import com.skillswap.userservice.dto.response.PreferenceResponse;
 import com.skillswap.userservice.dto.response.ProfileResponse;
-import com.skillswap.userservice.dto.response.UserBriefResponse;
 import com.skillswap.userservice.event.ProfileUpdated;
 import com.skillswap.userservice.event.UserRegisteredEvent;
 import com.skillswap.userservice.exception.ProfileNotFoundException;

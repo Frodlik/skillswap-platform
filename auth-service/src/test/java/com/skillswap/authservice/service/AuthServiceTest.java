@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -44,7 +45,8 @@ class AuthServiceTest {
     @Mock CredentialsRepository credentialsRepository;
     @Mock RefreshTokenRepository refreshTokenRepository;
     @Mock JwtService jwtService;
-    @Mock EventPublisher eventPublisher;
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     private AuthService authService;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -86,7 +88,7 @@ class AuthServiceTest {
 
             ArgumentCaptor<UserRegisteredEvent> eventCap =
                     ArgumentCaptor.forClass(UserRegisteredEvent.class);
-            verify(eventPublisher).publish(eventCap.capture());
+            verify(eventPublisher).publishEvent(eventCap.capture());
             assertThat(eventCap.getValue().email()).isEqualTo("user@test.com");
         }
 
@@ -99,7 +101,7 @@ class AuthServiceTest {
                     .isInstanceOf(EmailAlreadyExistsException.class);
 
             verify(credentialsRepository, never()).save(any());
-            verify(eventPublisher, never()).publish(any());
+            verify(eventPublisher, never()).publishEvent(any());
         }
     }
 

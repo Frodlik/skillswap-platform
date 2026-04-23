@@ -127,14 +127,14 @@ public class ProfileService {
 
     private ProfileResponse toProfileResponse(Profile p) {
         return new ProfileResponse(
-                p.getId(), p.getUserId(), p.getDisplayName(), p.getBio(),
+                p.getUserId(), p.getDisplayName(), p.getBio(),
                 p.getAvatarUrl(), p.getTimezone(), p.getLanguage(),
                 p.getLocation(), p.getRating(), p.getCreatedAt(), p.getUpdatedAt());
     }
 
     private PreferenceResponse toPreferenceResponse(UserPreference p) {
         return new PreferenceResponse(
-                p.getId(), p.getUserId(), p.getPreferredLanguages(),
+                p.getUserId(), p.getPreferredLanguages(),
                 p.getPreferredTimezoneRange(), p.getAvailabilitySchedule());
     }
 

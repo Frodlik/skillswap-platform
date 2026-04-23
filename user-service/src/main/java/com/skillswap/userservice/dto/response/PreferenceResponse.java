@@ -3,7 +3,6 @@ package com.skillswap.userservice.dto.response;
 import java.util.UUID;
 
 public record PreferenceResponse(
-        UUID id,
         UUID userId,
         String[] preferredLanguages,
         String preferredTimezoneRange,

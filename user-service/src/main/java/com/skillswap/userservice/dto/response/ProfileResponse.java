@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record ProfileResponse(
-        UUID id,
         UUID userId,
         String displayName,
         String bio,
