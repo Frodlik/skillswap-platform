@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/matching_test
+    username: test
+    password: test
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  rabbitmq:
+    host: localhost
+    port: 5672
+  cloud:
+    discovery:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+
+services:
+  user-service:
+    base-url: http://localhost:${wiremock.port:9999}
+  skill-service:
+    base-url: http://localhost:${wiremock.port:9999}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      user-service:
+        sliding-window-size: 3
+        failure-rate-threshold: 100
+      skill-service:
+        sliding-window-size: 3
+        failure-rate-threshold: 100
