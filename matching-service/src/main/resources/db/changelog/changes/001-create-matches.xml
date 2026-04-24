@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+
+    <changeSet id="001-create-matches" author="skillswap">
+        <createTable tableName="matches">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_a_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_b_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_score" type="double precision">
+                <constraints nullable="false"/>
+            </column>
+            <column name="score_breakdown" type="jsonb"/>
+            <column name="status" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="timestamptz"
+                    defaultValueComputed="now() + interval '7 days'">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="matches" indexName="idx_matches_user_a_id">
+            <column name="user_a_id"/>
+        </createIndex>
+        <createIndex tableName="matches" indexName="idx_matches_user_b_id">
+            <column name="user_b_id"/>
+        </createIndex>
+
+        <sql>
+            CREATE UNIQUE INDEX uq_matches_pending_pair
+            ON matches (user_a_id, user_b_id)
+            WHERE status = 'PENDING';
+        </sql>
+    </changeSet>
+</databaseChangeLog>

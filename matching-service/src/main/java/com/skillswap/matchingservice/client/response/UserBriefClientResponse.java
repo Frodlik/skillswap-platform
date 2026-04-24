@@ -1,9 +1,9 @@
-package com.skillswap.userservice.dto.response;
+package com.skillswap.matchingservice.client.response;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public record UserBriefResponse(
+public record UserBriefClientResponse(
         UUID userId,
         String displayName,
         String avatarUrl,

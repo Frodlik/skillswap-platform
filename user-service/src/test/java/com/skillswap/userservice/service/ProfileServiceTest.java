@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -228,12 +229,73 @@ class ProfileServiceTest {
         @Test
         void found_returnsUserBriefResponse() {
             UUID userId = UUID.randomUUID();
-            when(profileRepository.findByUserId(userId)).thenReturn(Optional.of(buildProfile(userId)));
+            Profile profile = Profile.builder()
+                    .id(UUID.randomUUID())
+                    .userId(userId)
+                    .displayName("testuser")
+                    .language("EN")
+                    .timezone("UTC")
+                    .rating(new BigDecimal("4.2"))
+                    .createdAt(Instant.now())
+                    .updatedAt(Instant.now())
+                    .build();
+            when(profileRepository.findByUserId(userId)).thenReturn(Optional.of(profile));
 
             var response = profileService.getBrief(userId);
 
             assertThat(response.userId()).isEqualTo(userId);
             assertThat(response.displayName()).isEqualTo("testuser");
+            assertThat(response.language()).isEqualTo("EN");
+            assertThat(response.timezone()).isEqualTo("UTC");
+        }
+    }
+
+    // ---- updateRating ----
+
+    @Nested
+    class UpdateRating {
+
+        @Test
+        void notFound_throwsProfileNotFoundException() {
+            UUID userId = UUID.randomUUID();
+            when(profileRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> profileService.updateRating(userId, new BigDecimal("4.5")))
+                    .isInstanceOf(ProfileNotFoundException.class);
+        }
+
+        @Test
+        void updatesRatingAndSaves() {
+            UUID userId = UUID.randomUUID();
+            Profile profile = buildProfile(userId);
+            when(profileRepository.findByUserId(userId)).thenReturn(Optional.of(profile));
+            when(profileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            BigDecimal newRating = new BigDecimal("4.7");
+            profileService.updateRating(userId, newRating);
+
+            ArgumentCaptor<Profile> profileCap = ArgumentCaptor.forClass(Profile.class);
+            verify(profileRepository).save(profileCap.capture());
+            assertThat(profileCap.getValue().getRating()).isEqualTo(newRating);
+
+            ArgumentCaptor<ProfileUpdated> eventCap = ArgumentCaptor.forClass(ProfileUpdated.class);
+            verify(applicationEventPublisher).publishEvent(eventCap.capture());
+            assertThat(eventCap.getValue().changedFields()).containsExactly("rating");
+        }
+
+        @Test
+        void publishesProfileUpdatedEvent_withRatingInChangedFields() {
+            UUID userId = UUID.randomUUID();
+            Profile profile = buildProfile(userId);
+            when(profileRepository.findByUserId(userId)).thenReturn(Optional.of(profile));
+            when(profileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            profileService.updateRating(userId, new BigDecimal("3.9"));
+
+            ArgumentCaptor<ProfileUpdated> eventCap = ArgumentCaptor.forClass(ProfileUpdated.class);
+            verify(applicationEventPublisher).publishEvent(eventCap.capture());
+            assertThat(eventCap.getValue().userId()).isEqualTo(userId);
+            assertThat(eventCap.getValue().changedFields()).isEqualTo(List.of("rating"));
         }
     }
 
