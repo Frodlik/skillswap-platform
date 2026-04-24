@@ -24,6 +24,6 @@ public class KnownUser {
     @Column(nullable = false, updatable = false)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "registered_at", nullable = false)
     private Instant registeredAt;
 }

@@ -31,17 +31,17 @@ public class Match {
     @Column(nullable = false, updatable = false)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "user_a_id", nullable = false)
     private UUID userAId;
 
-    @Column(nullable = false)
+    @Column(name = "user_b_id", nullable = false)
     private UUID userBId;
 
-    @Column(nullable = false)
+    @Column(name = "total_score", nullable = false)
     private double totalScore;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "score_breakdown", columnDefinition = "jsonb")
     private String scoreBreakdown;
 
     @Enumerated(EnumType.STRING)
@@ -49,9 +49,9 @@ public class Match {
     private MatchStatus status;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 }
