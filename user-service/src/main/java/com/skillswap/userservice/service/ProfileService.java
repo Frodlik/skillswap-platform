@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -96,9 +97,19 @@ public class ProfileService {
     @Transactional(readOnly = true)
     public UserBriefResponse getBrief(UUID userId) {
         return profileRepository.findByUserId(userId)
-                .map(p -> new UserBriefResponse(p.getUserId(), p.getDisplayName(),
-                        p.getAvatarUrl(), p.getRating()))
+                .map(p -> new UserBriefResponse(
+                        p.getUserId(), p.getDisplayName(), p.getAvatarUrl(),
+                        p.getRating(), p.getLanguage(), p.getTimezone()))
                 .orElseThrow(() -> new ProfileNotFoundException(userId));
+    }
+
+    @Transactional
+    public void updateRating(UUID userId, BigDecimal newRating) {
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ProfileNotFoundException(userId));
+        profile.setRating(newRating);
+        profileRepository.save(profile);
+        applicationEventPublisher.publishEvent(new ProfileUpdated(userId, List.of("rating")));
     }
 
     @Transactional

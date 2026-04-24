@@ -7,5 +7,7 @@ public record UserBriefResponse(
         UUID userId,
         String displayName,
         String avatarUrl,
-        BigDecimal rating
+        BigDecimal rating,
+        String language,
+        String timezone
 ) {}
