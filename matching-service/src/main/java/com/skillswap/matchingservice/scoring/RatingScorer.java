@@ -5,14 +5,20 @@ import org.springframework.stereotype.Component;
 @Component
 public final class RatingScorer implements Scorer {
 
-    @Override
-    public ScorerResult score(UserMatchProfile a, UserMatchProfile b) {
-        return new ScorerResult(0.0, "stub");
-    }
+    private static final double NEW_USER_SCORE = 0.6;
 
     @Override
     public double weight() { return 0.10; }
 
     @Override
     public String name() { return "rating"; }
+
+    @Override
+    public ScorerResult score(UserMatchProfile a, UserMatchProfile b) {
+        if (b.rating() == null) {
+            return new ScorerResult(NEW_USER_SCORE, "New user - benefit of the doubt");
+        }
+        double normalized = b.rating().doubleValue() / 5.0;
+        return new ScorerResult(normalized, "Rating %.2f / 5.0".formatted(b.rating()));
+    }
 }
