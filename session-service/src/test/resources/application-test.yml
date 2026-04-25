@@ -1,0 +1,20 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/session_test
+    username: test
+    password: test
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  rabbitmq:
+    host: localhost
+    port: 5672
+  cloud:
+    discovery:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
