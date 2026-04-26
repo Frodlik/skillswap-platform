@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+
+    <changeSet id="004-create-reviews" author="skillswap">
+        <createTable tableName="reviews">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="session_id" type="uuid">
+                <constraints nullable="false"
+                             foreignKeyName="fk_reviews_session"
+                             references="sessions(id)"/>
+            </column>
+            <column name="reviewer_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reviewee_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rating" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="comment" type="text"/>
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint tableName="reviews"
+                             columnNames="session_id, reviewer_id"
+                             constraintName="uq_reviews_session_reviewer"/>
+        <sql>
+            ALTER TABLE reviews ADD CONSTRAINT chk_reviews_rating
+            CHECK (rating BETWEEN 1 AND 5);
+        </sql>
+
+        <createIndex tableName="reviews" indexName="idx_reviews_session_id">
+            <column name="session_id"/>
+        </createIndex>
+        <createIndex tableName="reviews" indexName="idx_reviews_reviewee_id">
+            <column name="reviewee_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
