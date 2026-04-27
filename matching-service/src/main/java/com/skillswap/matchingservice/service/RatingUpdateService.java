@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 @AllArgsConstructor
 public class RatingUpdateService {
@@ -16,13 +18,15 @@ public class RatingUpdateService {
     private final UserServiceClient userServiceClient;
 
     public void handleSessionCompleted(SessionCompletedEvent event) {
-        if (event.ratingForA() != null) {
-            userServiceClient.updateRating(event.userAId(), event.ratingForA());
-            log.info("Updated rating for userA={} to {}", event.userAId(), event.ratingForA());
+        if (event.ratingForTeacher() != null) {
+            BigDecimal rating = BigDecimal.valueOf(event.ratingForTeacher());
+            userServiceClient.updateRating(event.teacherId(), rating);
+            log.info("Updated rating for teacherId={} to {}", event.teacherId(), rating);
         }
-        if (event.ratingForB() != null) {
-            userServiceClient.updateRating(event.userBId(), event.ratingForB());
-            log.info("Updated rating for userB={} to {}", event.userBId(), event.ratingForB());
+        if (event.ratingForLearner() != null) {
+            BigDecimal rating = BigDecimal.valueOf(event.ratingForLearner());
+            userServiceClient.updateRating(event.learnerId(), rating);
+            log.info("Updated rating for learnerId={} to {}", event.learnerId(), rating);
         }
     }
 }

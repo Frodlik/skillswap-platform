@@ -47,6 +47,6 @@ management:
     health:
       show-details: always
 
-  logging:
-    level:
-      liquibase: DEBUG
+logging:
+  level:
+    liquibase: DEBUG

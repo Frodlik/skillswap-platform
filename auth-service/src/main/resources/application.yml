@@ -32,8 +32,8 @@ spring:
     password: ${RABBITMQ_PASSWORD:guest}
 
 jwt:
-  private-key: classpath:private.pem
-  public-key: classpath:public.pem
+  private-key: ${JWT_PRIVATE_KEY:classpath:keys/private.pem}
+  public-key: ${JWT_PUBLIC_KEY:classpath:keys/public.pem}
   access-token-expiry: PT15M
   refresh-token-expiry: P7D
 

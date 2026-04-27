@@ -19,12 +19,14 @@ public class SessionEventPublisher {
     private final RabbitTemplate rabbitTemplate;
 
     public void publishSessionCompleted(UUID sessionId, UUID teacherId, UUID learnerId,
-                                        String skillName, int rating) {
-        var event = new SessionCompletedEvent(sessionId, teacherId, learnerId, skillName, rating);
+                                        Integer ratingForTeacher, Integer ratingForLearner) {
+        var event = new SessionCompletedEvent(sessionId, teacherId, learnerId,
+                ratingForTeacher, ratingForLearner);
         rabbitTemplate.convertAndSend(
                 RabbitMqConfig.EXCHANGE,
                 RabbitMqConfig.SESSION_COMPLETED_KEY,
                 event);
-        log.info("Published session.completed for sessionId={} rating={}", sessionId, rating);
+        log.info("Published session.completed sessionId={} ratingTeacher={} ratingLearner={}",
+                sessionId, ratingForTeacher, ratingForLearner);
     }
 }

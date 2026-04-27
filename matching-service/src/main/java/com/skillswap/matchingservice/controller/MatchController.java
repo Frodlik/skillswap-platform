@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/match")
+@RequestMapping("/api/v1/matches")
 @AllArgsConstructor
 public class MatchController {
 

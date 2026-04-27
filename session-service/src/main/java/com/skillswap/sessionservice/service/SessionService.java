@@ -1,5 +1,6 @@
 package com.skillswap.sessionservice.service;
 
+import com.skillswap.sessionservice.domain.Review;
 import com.skillswap.sessionservice.domain.Session;
 import com.skillswap.sessionservice.domain.SessionStatus;
 import com.skillswap.sessionservice.dto.request.CreateSessionRequest;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -83,9 +85,11 @@ public class SessionService {
 
         Session saved = sessionRepo.save(session);
         if (to == SessionStatus.COMPLETED) {
-            int avgRating = averageRating(id);
+            var reviews = reviewRepo.findBySessionId(id);
+            Integer ratingForTeacher = averageRatingForReviewee(reviews, saved.getTeacherId());
+            Integer ratingForLearner = averageRatingForReviewee(reviews, saved.getLearnerId());
             publisher.publishSessionCompleted(saved.getId(), saved.getTeacherId(),
-                    saved.getLearnerId(), saved.getSkillName(), avgRating);
+                    saved.getLearnerId(), ratingForTeacher, ratingForLearner);
         }
         log.info("Session {} transitioned {} -> {}", id, from, to);
         return toResponse(saved);
@@ -103,11 +107,11 @@ public class SessionService {
         }
     }
 
-    private int averageRating(UUID sessionId) {
-        var reviews = reviewRepo.findBySessionId(sessionId);
-        if (reviews.isEmpty()) return 0;
-        int sum = reviews.stream().mapToInt(r -> r.getRating()).sum();
-        return Math.round((float) sum / reviews.size());
+    private Integer averageRatingForReviewee(List<Review> reviews, UUID revieweeId) {
+        var matching = reviews.stream().filter(r -> revieweeId.equals(r.getRevieweeId())).toList();
+        if (matching.isEmpty()) return null;
+        int sum = matching.stream().mapToInt(Review::getRating).sum();
+        return Math.round((float) sum / matching.size());
     }
 
     private SessionResponse toResponse(Session s) {

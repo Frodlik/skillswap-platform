@@ -54,7 +54,8 @@ public class MatchEventListener {
 
     @RabbitListener(queues = RabbitMqConfig.SESSION_COMPLETED_QUEUE)
     public void onSessionCompleted(SessionCompletedEvent event) {
-        log.info("session.completed userA={} userB={}", event.userAId(), event.userBId());
+        log.info("session.completed sessionId={} teacherId={} learnerId={}",
+                event.sessionId(), event.teacherId(), event.learnerId());
         ratingUpdateService.handleSessionCompleted(event);
     }
 }

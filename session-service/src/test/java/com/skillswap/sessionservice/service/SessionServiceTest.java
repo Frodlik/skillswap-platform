@@ -1,5 +1,6 @@
 package com.skillswap.sessionservice.service;
 
+import com.skillswap.sessionservice.domain.Review;
 import com.skillswap.sessionservice.domain.Session;
 import com.skillswap.sessionservice.domain.SessionStatus;
 import com.skillswap.sessionservice.dto.request.CreateSessionRequest;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -92,8 +94,9 @@ class SessionServiceTest {
 
         assertThat(s.getStatus()).isEqualTo(SessionStatus.COMPLETED);
         assertThat(s.getCompletedAt()).isNotNull();
-        verify(walletService).transfer(eq(learnerId), eq(teacherId), eq(2), eq(sessionId));
-        verify(publisher).publishSessionCompleted(eq(sessionId), eq(teacherId), eq(learnerId), eq("Java"), eq(0));
+        verify(walletService).transfer(learnerId, teacherId, 2, sessionId);
+        verify(publisher).publishSessionCompleted(eq(sessionId), eq(teacherId), eq(learnerId),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull());
     }
 
     @Test
@@ -104,7 +107,7 @@ class SessionServiceTest {
 
         service.changeStatus(sessionId, SessionStatus.CANCELLED);
 
-        verify(walletService).release(eq(learnerId), eq(2), eq(sessionId));
+        verify(walletService).release(learnerId, 2, sessionId);
         verifyNoInteractions(publisher);
     }
 
@@ -116,7 +119,7 @@ class SessionServiceTest {
 
         service.changeStatus(sessionId, SessionStatus.CANCELLED);
 
-        verify(walletService).release(eq(learnerId), eq(2), eq(sessionId));
+        verify(walletService).release(learnerId, 2, sessionId);
     }
 
     @Test
@@ -153,11 +156,27 @@ class SessionServiceTest {
         when(sessionRepo.findById(sessionId)).thenReturn(Optional.of(s));
         when(sessionRepo.save(any(Session.class))).thenAnswer(inv -> inv.getArgument(0));
         when(reviewRepo.findBySessionId(sessionId)).thenReturn(List.of(
-                reviewWithRating(5), reviewWithRating(3)));
+                reviewFor(teacherId, 5),
+                reviewFor(teacherId, 3),
+                reviewFor(learnerId, 4)));
 
         service.changeStatus(sessionId, SessionStatus.COMPLETED);
 
-        verify(publisher).publishSessionCompleted(eq(sessionId), eq(teacherId), eq(learnerId), eq("Java"), eq(4));
+        verify(publisher).publishSessionCompleted(sessionId, teacherId, learnerId, 4, 4);
+    }
+
+    @Test
+    void completedEvent_carriesNullRatingsWhenNoMatchingReviewee() {
+        Session s = sessionFixture(SessionStatus.ACTIVE);
+        when(sessionRepo.findById(sessionId)).thenReturn(Optional.of(s));
+        when(sessionRepo.save(any(Session.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(reviewRepo.findBySessionId(sessionId)).thenReturn(List.of(
+                reviewFor(teacherId, 5)));
+
+        service.changeStatus(sessionId, SessionStatus.COMPLETED);
+
+        verify(publisher).publishSessionCompleted(sessionId, teacherId, learnerId,
+                5, ArgumentMatchers.isNull());
     }
 
     private Session sessionFixture(SessionStatus status) {
@@ -167,10 +186,10 @@ class SessionServiceTest {
                 .durationTokens(2).status(status).build();
     }
 
-    private com.skillswap.sessionservice.domain.Review reviewWithRating(int rating) {
-        return com.skillswap.sessionservice.domain.Review.builder()
+    private Review reviewFor(UUID revieweeId, int rating) {
+        return Review.builder()
                 .id(UUID.randomUUID()).sessionId(sessionId)
-                .reviewerId(UUID.randomUUID()).revieweeId(UUID.randomUUID())
+                .reviewerId(UUID.randomUUID()).revieweeId(revieweeId)
                 .rating(rating).build();
     }
 }

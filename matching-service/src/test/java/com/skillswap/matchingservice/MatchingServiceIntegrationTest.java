@@ -117,7 +117,7 @@ class MatchingServiceIntegrationTest {
                 .expiresAt(Instant.now().plus(7, ChronoUnit.DAYS)).build());
 
         ResponseEntity<MatchSuggestion[]> response = client.get()
-                .uri("/api/match/suggestions/{id}?limit=10", userId)
+                .uri("/api/v1/matches/suggestions/{id}?limit=10", userId)
                 .retrieve()
                 .toEntity(MatchSuggestion[].class);
 
@@ -139,7 +139,7 @@ class MatchingServiceIntegrationTest {
                 .expiresAt(Instant.now().plus(7, ChronoUnit.DAYS)).build());
 
         ResponseEntity<Object> response = client.post()
-                .uri("/api/match/{id}/accept", matchId)
+                .uri("/api/v1/matches/{id}/accept", matchId)
                 .retrieve()
                 .toEntity(Object.class);
 
@@ -154,7 +154,7 @@ class MatchingServiceIntegrationTest {
         UUID unknownUser = UUID.randomUUID();
 
         ResponseEntity<MatchSuggestion[]> response = client.get()
-                .uri("/api/match/suggestions/{id}", unknownUser)
+                .uri("/api/v1/matches/suggestions/{id}", unknownUser)
                 .retrieve()
                 .toEntity(MatchSuggestion[].class);
 

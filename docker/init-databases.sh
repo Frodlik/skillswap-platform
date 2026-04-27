@@ -4,7 +4,7 @@ set -euo pipefail
 # Creates all SkillSwap databases under the same PostgreSQL instance.
 # Executed once by the postgres container on first startup.
 
-DATABASES=(auth_db user_db skill_db match_db session_db)
+DATABASES=(auth_db user_db skill_db matching_db session_db)
 
 for db in "${DATABASES[@]}"; do
     echo "Creating database: $db"
