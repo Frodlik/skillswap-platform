@@ -1,5 +1,6 @@
 package com.skillswap.matchingservice.scoring;
 
+import com.skillswap.matchingservice.config.MatchingProperties;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -10,7 +11,8 @@ import static org.assertj.core.api.Assertions.within;
 
 class SkillMatchScorerTest {
 
-    private final SkillMatchScorer scorer = new SkillMatchScorer();
+    private final SkillMatchScorer scorer = new SkillMatchScorer(
+            new MatchingProperties(0.30, 0.20, 0.10, 0.15, 0.10, 0.10, 0.05));
     private final UUID catA = UUID.randomUUID();
     private final UUID catB = UUID.randomUUID();
 

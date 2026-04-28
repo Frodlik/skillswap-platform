@@ -1,5 +1,6 @@
 package com.skillswap.matchingservice.scoring;
 
+import com.skillswap.matchingservice.config.MatchingProperties;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -11,7 +12,8 @@ import static org.assertj.core.api.Assertions.within;
 
 class RatingScorerTest {
 
-    private final RatingScorer scorer = new RatingScorer();
+    private final RatingScorer scorer = new RatingScorer(
+            new MatchingProperties(0.30, 0.20, 0.10, 0.15, 0.10, 0.10, 0.05));
 
     private UserMatchProfile candidateWithRating(BigDecimal rating) {
         return new UserMatchProfile(UUID.randomUUID(), null, List.of(),

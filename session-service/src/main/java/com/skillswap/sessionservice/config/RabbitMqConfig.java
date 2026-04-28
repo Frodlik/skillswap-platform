@@ -26,8 +26,13 @@ public class RabbitMqConfig {
         return new TopicExchange(EXCHANGE, true, false);
     }
 
-    @Bean Queue matchAcceptedQueue()  { return QueueBuilder.durable(MATCH_ACCEPTED_QUEUE).build(); }
-    @Bean Queue userRegisteredQueue() { return QueueBuilder.durable(USER_REGISTERED_QUEUE).build(); }
+    @Bean Queue matchAcceptedQueue()  {
+        return QueueBuilder.durable(MATCH_ACCEPTED_QUEUE).build();
+    }
+
+    @Bean Queue userRegisteredQueue() {
+        return QueueBuilder.durable(USER_REGISTERED_QUEUE).build();
+    }
 
     @Bean
     Binding matchAcceptedBinding(Queue matchAcceptedQueue, TopicExchange skillswapTopicExchange) {

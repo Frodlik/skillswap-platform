@@ -69,7 +69,7 @@ class UserSkillRepositoryTest {
         List<UserSkill> result = userSkillRepository.findByUserId(user1);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getUserId()).isEqualTo(user1);
+        assertThat(result.getFirst().getUserId()).isEqualTo(user1);
     }
 
     @Test
@@ -81,7 +81,7 @@ class UserSkillRepositoryTest {
         List<UserSkill> result = userSkillRepository.search(null, "java");
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTags()).contains("java");
+        assertThat(result.getFirst().getTags()).contains("java");
     }
 
     @Test
@@ -126,8 +126,8 @@ class UserSkillRepositoryTest {
         assertThat(result).isEmpty();
     }
 
-    private UserSkill save(UUID userId, SkillType type, String[] tags) {
-        return userSkillRepository.save(
+    private void save(UUID userId, SkillType type, String[] tags) {
+        userSkillRepository.save(
                 UserSkill.builder()
                         .id(UUID.randomUUID())
                         .userId(userId)

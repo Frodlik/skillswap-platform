@@ -44,8 +44,7 @@ class ProfileServiceTest {
 
     @BeforeEach
     void setUp() {
-        profileService = new ProfileService(
-                profileRepository, userPreferenceRepository, applicationEventPublisher);
+        profileService = new ProfileService(profileRepository, userPreferenceRepository, applicationEventPublisher);
     }
 
     @Nested
@@ -142,8 +141,7 @@ class ProfileServiceTest {
         @Test
         void createsProfileWithEmailPrefix() {
             UUID userId = UUID.randomUUID();
-            UserRegisteredEvent event = new UserRegisteredEvent(
-                    userId, "john.doe@example.com", Instant.now());
+            UserRegisteredEvent event = new UserRegisteredEvent(userId, "john.doe@example.com", Instant.now());
             when(profileRepository.existsByUserId(userId)).thenReturn(false);
             when(profileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(userPreferenceRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -159,8 +157,7 @@ class ProfileServiceTest {
         @Test
         void idempotent_skipsIfProfileExists() {
             UUID userId = UUID.randomUUID();
-            UserRegisteredEvent event = new UserRegisteredEvent(
-                    userId, "exists@example.com", Instant.now());
+            UserRegisteredEvent event = new UserRegisteredEvent(userId, "exists@example.com", Instant.now());
             when(profileRepository.existsByUserId(userId)).thenReturn(true);
 
             profileService.createProfileFromEvent(event);
@@ -172,8 +169,7 @@ class ProfileServiceTest {
         @Test
         void createsDefaultPreferences() {
             UUID userId = UUID.randomUUID();
-            UserRegisteredEvent event = new UserRegisteredEvent(
-                    userId, "user@example.com", Instant.now());
+            UserRegisteredEvent event = new UserRegisteredEvent(userId, "user@example.com", Instant.now());
             when(profileRepository.existsByUserId(userId)).thenReturn(false);
             when(profileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(userPreferenceRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -185,8 +181,6 @@ class ProfileServiceTest {
             assertThat(prefCap.getValue().getUserId()).isEqualTo(userId);
         }
     }
-
-    // ---- searchProfiles ----
 
     @Nested
     class SearchProfiles {
@@ -200,11 +194,9 @@ class ProfileServiceTest {
             List<ProfileResponse> results = profileService.searchProfiles("en", "UTC");
 
             assertThat(results).hasSize(1);
-            assertThat(results.get(0).userId()).isEqualTo(userId);
+            assertThat(results.getFirst().userId()).isEqualTo(userId);
         }
     }
-
-    // ---- getPreferences ----
 
     @Nested
     class GetPreferences {
@@ -220,8 +212,6 @@ class ProfileServiceTest {
             assertThat(response.userId()).isEqualTo(userId);
         }
     }
-
-    // ---- getBrief ----
 
     @Nested
     class GetBrief {
@@ -249,8 +239,6 @@ class ProfileServiceTest {
             assertThat(response.timezone()).isEqualTo("UTC");
         }
     }
-
-    // ---- updateRating ----
 
     @Nested
     class UpdateRating {

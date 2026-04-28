@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -114,7 +113,7 @@ class SessionLifecycleSchedulerTest {
         when(sessionRepo.findByStatusAndScheduledAtLessThanEqual(SessionStatus.SCHEDULED, now))
                 .thenReturn(List.of(a, b));
         org.mockito.Mockito.doThrow(new IllegalStateException("boom"))
-                .when(sessionService).changeStatus(eq(failing), eq(SessionStatus.ACTIVE));
+                .when(sessionService).changeStatus(failing, SessionStatus.ACTIVE);
 
         scheduler.activateDueSessions(now);
 

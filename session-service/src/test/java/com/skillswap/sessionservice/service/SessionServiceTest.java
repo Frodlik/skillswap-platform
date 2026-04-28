@@ -175,8 +175,9 @@ class SessionServiceTest {
 
         service.changeStatus(sessionId, SessionStatus.COMPLETED);
 
-        verify(publisher).publishSessionCompleted(sessionId, teacherId, learnerId,
-                5, ArgumentMatchers.isNull());
+        verify(publisher).publishSessionCompleted(
+                eq(sessionId), eq(teacherId), eq(learnerId),
+                eq(5), ArgumentMatchers.isNull());
     }
 
     private Session sessionFixture(SessionStatus status) {

@@ -1,14 +1,20 @@
 package com.skillswap.matchingservice.scoring;
 
+import com.skillswap.matchingservice.config.MatchingProperties;
 import org.springframework.stereotype.Component;
 
 @Component
 public final class RatingScorer implements Scorer {
 
     private static final double NEW_USER_SCORE = 0.6;
+    private final double weight;
+
+    public RatingScorer(MatchingProperties properties) {
+        this.weight = properties.rating();
+    }
 
     @Override
-    public double weight() { return 0.10; }
+    public double weight() { return weight; }
 
     @Override
     public String name() { return "rating"; }

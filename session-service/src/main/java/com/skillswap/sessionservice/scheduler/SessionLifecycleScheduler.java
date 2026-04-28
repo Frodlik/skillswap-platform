@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 @AllArgsConstructor
@@ -51,7 +52,7 @@ public class SessionLifecycleScheduler {
         }
     }
 
-    private void transition(java.util.UUID id, SessionStatus to) {
+    private void transition(UUID id, SessionStatus to) {
         try {
             sessionService.changeStatus(id, to);
         } catch (RuntimeException e) {

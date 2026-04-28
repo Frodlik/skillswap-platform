@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.UUID;
+
 @Component
 @AllArgsConstructor
 public class SkillEventPublisher {
@@ -28,7 +30,7 @@ public class SkillEventPublisher {
         }
     }
 
-    private void publish(String routingKey, Object payload, java.util.UUID skillId) {
+    private void publish(String routingKey, Object payload, UUID skillId) {
         try {
             rabbitTemplate.convertAndSend(RabbitMqConfig.EXCHANGE, routingKey, payload);
             log.info("Published '{}' skillId={}", routingKey, skillId);

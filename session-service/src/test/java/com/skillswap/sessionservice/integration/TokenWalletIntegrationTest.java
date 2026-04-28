@@ -73,12 +73,12 @@ class TokenWalletIntegrationTest {
         TokenWallet wallet = service.createWalletWithSignupBonus(userId);
 
         assertThat(wallet.getBalance()).isEqualTo(4);
-        assertThat(wallet.getHeldBalance()).isEqualTo(0);
+        assertThat(wallet.getHeldBalance()).isZero();
 
         var page = txRepo.findByWalletIdOrderByCreatedAtDesc(wallet.getId(), PageRequest.of(0, 10));
         assertThat(page.getContent()).hasSize(1);
-        assertThat(page.getContent().get(0).getType()).isEqualTo(TransactionType.CREDIT);
-        assertThat(page.getContent().get(0).getAmount()).isEqualTo(4);
+        assertThat(page.getContent().getFirst().getType()).isEqualTo(TransactionType.CREDIT);
+        assertThat(page.getContent().getFirst().getAmount()).isEqualTo(4);
     }
 
     @Test
@@ -97,9 +97,9 @@ class TokenWalletIntegrationTest {
         TokenWallet teacherWallet = walletRepo.findByUserId(teacher).orElseThrow();
 
         assertThat(learnerWallet.getBalance()).isEqualTo(2);
-        assertThat(learnerWallet.getHeldBalance()).isEqualTo(0);
+        assertThat(learnerWallet.getHeldBalance()).isZero();
         assertThat(teacherWallet.getBalance()).isEqualTo(6);
-        assertThat(teacherWallet.getHeldBalance()).isEqualTo(0);
+        assertThat(teacherWallet.getHeldBalance()).isZero();
     }
 
     @Test
@@ -113,7 +113,7 @@ class TokenWalletIntegrationTest {
 
         TokenWallet wallet = walletRepo.findByUserId(learner).orElseThrow();
         assertThat(wallet.getBalance()).isEqualTo(4);
-        assertThat(wallet.getHeldBalance()).isEqualTo(0);
+        assertThat(wallet.getHeldBalance()).isZero();
     }
 
     @Test

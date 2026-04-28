@@ -18,7 +18,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InsufficientBalanceException.class)
-    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
     ErrorResponse handleInsufficient(InsufficientBalanceException ex, HttpServletRequest req) {
         return new ErrorResponse(422, ex.getMessage(), req.getRequestURI(), Instant.now());
     }

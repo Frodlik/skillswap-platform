@@ -1,5 +1,6 @@
 package com.skillswap.matchingservice.scoring;
 
+import com.skillswap.matchingservice.config.MatchingProperties;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -8,8 +9,14 @@ import java.time.ZoneId;
 @Component
 public final class TimezoneScorer implements Scorer {
 
+    private final double weight;
+
+    public TimezoneScorer(MatchingProperties properties) {
+        this.weight = properties.timezone();
+    }
+
     @Override
-    public double weight() { return 0.05; }
+    public double weight() { return weight; }
 
     @Override
     public String name() { return "timezone"; }

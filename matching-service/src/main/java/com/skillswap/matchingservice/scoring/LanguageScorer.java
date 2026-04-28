@@ -1,5 +1,6 @@
 package com.skillswap.matchingservice.scoring;
 
+import com.skillswap.matchingservice.config.MatchingProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -8,8 +9,14 @@ import java.util.Set;
 @Component
 public final class LanguageScorer implements Scorer {
 
+    private final double weight;
+
+    public LanguageScorer(MatchingProperties properties) {
+        this.weight = properties.language();
+    }
+
     @Override
-    public double weight() { return 0.10; }
+    public double weight() { return weight; }
 
     @Override
     public String name() { return "language"; }

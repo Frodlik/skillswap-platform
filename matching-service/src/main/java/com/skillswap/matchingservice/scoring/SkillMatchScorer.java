@@ -1,5 +1,6 @@
 package com.skillswap.matchingservice.scoring;
 
+import com.skillswap.matchingservice.config.MatchingProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -7,8 +8,14 @@ import java.util.List;
 @Component
 public final class SkillMatchScorer implements Scorer {
 
+    private final double weight;
+
+    public SkillMatchScorer(MatchingProperties properties) {
+        this.weight = properties.skillMatch();
+    }
+
     @Override
-    public double weight() { return 0.35; }
+    public double weight() { return weight; }
 
     @Override
     public String name() { return "skill-match"; }

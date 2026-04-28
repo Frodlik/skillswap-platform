@@ -2,6 +2,7 @@ package com.skillswap.matchingservice.scoring;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.skillswap.matchingservice.config.MatchingProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -12,9 +13,14 @@ import java.util.Map;
 public final class AvailabilityScorer implements Scorer {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private final double weight;
+
+    public AvailabilityScorer(MatchingProperties properties) {
+        this.weight = properties.availability();
+    }
 
     @Override
-    public double weight() { return 0.15; }
+    public double weight() { return weight; }
 
     @Override
     public String name() { return "availability"; }

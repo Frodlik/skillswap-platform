@@ -59,9 +59,9 @@ class SkillServiceTest {
             List<CategoryResponse> result = skillService.getCategories();
 
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).name()).isEqualTo("Programming");
-            assertThat(result.get(0).children()).hasSize(1);
-            assertThat(result.get(0).children().get(0).name()).isEqualTo("Backend");
+            assertThat(result.getFirst().name()).isEqualTo("Programming");
+            assertThat(result.getFirst().children()).hasSize(1);
+            assertThat(result.getFirst().children().getFirst().name()).isEqualTo("Backend");
         }
 
         @Test
@@ -154,7 +154,7 @@ class SkillServiceTest {
             List<SkillResponse> result = skillService.getUserSkills(userId);
 
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).userId()).isEqualTo(userId);
+            assertThat(result.getFirst().userId()).isEqualTo(userId);
         }
 
         @Test

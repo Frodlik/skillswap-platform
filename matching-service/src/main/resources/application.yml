@@ -44,6 +44,16 @@ services:
   skill-service:
     base-url: http://skill-service
 
+matching:
+  weights:
+    skill-match: ${MATCHING_W_SKILL_MATCH:0.30}
+    jaccard: ${MATCHING_W_JACCARD:0.20}
+    reciprocity: ${MATCHING_W_RECIPROCITY:0.10}
+    availability: ${MATCHING_W_AVAILABILITY:0.15}
+    language: ${MATCHING_W_LANGUAGE:0.10}
+    rating: ${MATCHING_W_RATING:0.10}
+    timezone: ${MATCHING_W_TIMEZONE:0.05}
+
 resilience4j:
   circuitbreaker:
     instances:
