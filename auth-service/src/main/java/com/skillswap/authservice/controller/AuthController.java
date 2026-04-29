@@ -6,6 +6,7 @@ import com.skillswap.authservice.dto.request.RefreshRequest;
 import com.skillswap.authservice.dto.request.RegisterRequest;
 import com.skillswap.authservice.dto.response.TokenResponse;
 import com.skillswap.authservice.service.AuthService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/auth")
 @AllArgsConstructor
+@Tag(name = "Auth", description = "Registration, login, token refresh, logout")
 public class AuthController {
 
     private final AuthService authService;

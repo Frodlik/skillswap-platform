@@ -13,6 +13,8 @@ import com.skillswap.sessionservice.repository.TokenTransactionRepository;
 import com.skillswap.sessionservice.repository.TokenWalletRepository;
 import com.skillswap.sessionservice.service.ReviewService;
 import com.skillswap.sessionservice.service.SessionService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,6 +36,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/sessions")
 @AllArgsConstructor
+@Tag(name = "Session", description = "Session lifecycle, token wallet, transactions, reviews")
+@SecurityRequirement(name = "bearerAuth")
 public class SessionController {
 
     private final SessionService sessionService;

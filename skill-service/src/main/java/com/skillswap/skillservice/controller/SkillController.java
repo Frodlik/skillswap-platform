@@ -5,6 +5,8 @@ import com.skillswap.skillservice.dto.request.SkillCreateRequest;
 import com.skillswap.skillservice.dto.response.CategoryResponse;
 import com.skillswap.skillservice.dto.response.SkillResponse;
 import com.skillswap.skillservice.service.SkillService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/skills")
 @AllArgsConstructor
+@Tag(name = "Skill", description = "Skill offers/wants, categories, tags")
+@SecurityRequirement(name = "bearerAuth")
 public class SkillController {
 
     private final SkillService skillService;

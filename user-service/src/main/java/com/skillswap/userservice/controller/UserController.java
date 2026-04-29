@@ -5,6 +5,8 @@ import com.skillswap.userservice.dto.request.UpdateProfileRequest;
 import com.skillswap.userservice.dto.response.PreferenceResponse;
 import com.skillswap.userservice.dto.response.ProfileResponse;
 import com.skillswap.userservice.service.ProfileService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +24,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/users")
 @AllArgsConstructor
+@Tag(name = "User", description = "User profiles and preferences")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private final ProfileService profileService;

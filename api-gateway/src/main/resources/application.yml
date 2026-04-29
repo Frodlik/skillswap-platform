@@ -54,3 +54,25 @@ jwt:
     - /actuator/health
     - /actuator/info
     - /fallback/**
+    - /swagger-ui.html
+    - /swagger-ui/**
+    - /api-docs/**
+    - /v3/api-docs/**
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: 1. auth-service
+        url: /api-docs/auth
+      - name: 2. user-service
+        url: /api-docs/user
+      - name: 3. skill-service
+        url: /api-docs/skill
+      - name: 4. matching-service
+        url: /api-docs/matching
+      - name: 5. session-service
+        url: /api-docs/session

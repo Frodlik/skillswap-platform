@@ -76,3 +76,6 @@ management:
   endpoint:
     health:
       show-details: always
+
+springdoc:
+  paths-to-exclude: /internal/**

@@ -50,3 +50,6 @@ management:
 logging:
   level:
     liquibase: DEBUG
+
+springdoc:
+  paths-to-exclude: /internal/**
