@@ -1,3 +1,6 @@
+obsidian/
+docs/
+
 # Maven
 target/
 api-gateway/target/

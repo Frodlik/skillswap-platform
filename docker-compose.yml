@@ -1,0 +1,261 @@
+# Full SkillSwap stack — postgres, rabbitmq, eureka, gateway, and 5 business services.
+# All services build from the root Dockerfile via build-arg SERVICE=<module>.
+#
+# Quick start:
+#   cp .env.example .env
+#   docker compose up -d --build
+#
+# Then:
+#   - Swagger UI:    http://localhost:8080/swagger-ui.html
+#   - Eureka:        http://localhost:8761  (eureka/eureka)
+#   - RabbitMQ UI:   http://localhost:15672 (guest/guest)
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  env_file: .env
+  networks:
+    - skillswap
+
+x-service-env: &service-env
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: 5432
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: 5672
+  EUREKA_HOST: eureka
+  EUREKA_PORT: 8761
+
+services:
+
+  # ─── Infra ──────────────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: skillswap-postgres
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - skillswap
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: skillswap-rabbitmq
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - skillswap
+
+  # ─── Service discovery ──────────────────────────────────────────────────────
+
+  eureka:
+    build:
+      context: .
+      args:
+        SERVICE: eureka-server
+    image: skillswap/eureka-server
+    container_name: skillswap-eureka
+    <<: *service-defaults
+    environment:
+      EUREKA_HOST: eureka
+    ports:
+      - "${EUREKA_PORT:-8761}:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider http://${EUREKA_USER}:${EUREKA_PASSWORD}@localhost:8761/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ─── Edge ───────────────────────────────────────────────────────────────────
+
+  api-gateway:
+    build:
+      context: .
+      args:
+        SERVICE: api-gateway
+    image: skillswap/api-gateway
+    container_name: skillswap-gateway
+    <<: *service-defaults
+    environment:
+      <<: *service-env
+    depends_on:
+      eureka:
+        condition: service_healthy
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+  # ─── Business services ──────────────────────────────────────────────────────
+
+  auth-service:
+    build:
+      context: .
+      args:
+        SERVICE: auth-service
+    image: skillswap/auth-service
+    container_name: skillswap-auth
+    <<: *service-defaults
+    environment:
+      <<: *service-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    ports:
+      - "${AUTH_SERVICE_PORT:-8081}:8081"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  user-service:
+    build:
+      context: .
+      args:
+        SERVICE: user-service
+    image: skillswap/user-service
+    container_name: skillswap-user
+    <<: *service-defaults
+    environment:
+      <<: *service-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    ports:
+      - "${USER_SERVICE_PORT:-8082}:8082"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  skill-service:
+    build:
+      context: .
+      args:
+        SERVICE: skill-service
+    image: skillswap/skill-service
+    container_name: skillswap-skill
+    <<: *service-defaults
+    environment:
+      <<: *service-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    ports:
+      - "${SKILL_SERVICE_PORT:-8083}:8083"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  matching-service:
+    build:
+      context: .
+      args:
+        SERVICE: matching-service
+    image: skillswap/matching-service
+    container_name: skillswap-matching
+    <<: *service-defaults
+    environment:
+      <<: *service-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    ports:
+      - "${MATCHING_SERVICE_PORT:-8084}:8084"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  session-service:
+    build:
+      context: .
+      args:
+        SERVICE: session-service
+    image: skillswap/session-service
+    container_name: skillswap-session
+    <<: *service-defaults
+    environment:
+      <<: *service-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    ports:
+      - "${SESSION_SERVICE_PORT:-8085}:8085"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  postgres_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  skillswap:
+    driver: bridge

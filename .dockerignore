@@ -1,0 +1,35 @@
+# Build artifacts
+**/target/
+**/*.iml
+**/*.log
+
+# IDE
+.idea/
+.vscode/
+.fleet/
+*.iml
+
+# VCS
+.git/
+.gitignore
+
+# Local env
+.env
+.env.local
+
+# Docs and design assets — not needed at build time
+docs/
+obsidian/
+postman/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+**/surefire-reports/
+**/jacoco.exec
+
+# Maven local cache (do not copy into image)
+.m2/
