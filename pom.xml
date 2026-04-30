@@ -90,6 +90,18 @@
         </dependencies>
     </dependencyManagement>
 
+    <!--
+      Observability deps inherited by every module (Phase 4 of MVP roadmap).
+      Versions come from Spring Boot 4 BOM via the spring-boot-starter-parent.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
     <build>
         <pluginManagement>
             <plugins>
