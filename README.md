@@ -1,5 +1,7 @@
 # SkillSwap
 
+[![CI](https://github.com/Frodlik/skillswap-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Frodlik/skillswap-platform/actions/workflows/ci.yml)
+
 > Microservice-based peer-to-peer skill exchange platform.
 > Diploma project — Java 21, Spring Boot 4, Spring Cloud 2025.
 
