@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Session completed</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 40px auto; color: #1a1a1a; line-height: 1.6;">
+
+<h1 style="font-size: 24px; font-weight: 500; letter-spacing: -0.02em; margin: 0 0 12px;">
+    Session completed — your turn to review
+</h1>
+
+<p style="font-size: 15px; margin: 0 0 16px;">
+    Your SkillSwap session is done. You participated as the
+    <strong th:text="${role}">teacher</strong>, and credits have already moved
+    on the wallets accordingly:
+</p>
+
+<ul style="font-size: 14px; color: #555; padding-left: 20px;">
+    <li>Held credits transferred from learner to teacher.</li>
+    <li>Both wallets updated — check <strong>/wallet</strong> for the transaction list.</li>
+</ul>
+
+<p style="font-size: 15px; margin: 16px 0 16px;">
+    The last step is the most important one: <strong>leave a review</strong> on the
+    other participant. Reviews update the rating, which feeds back into the
+    matching algorithm — better-rated users surface higher in suggestions.
+</p>
+
+<p style="font-size: 14px; color: #555;">
+    Open <strong>/sessions</strong> and click "Leave review" on the COMPLETED row.
+    1–5 stars + an optional comment. Two minutes, big platform impact.
+</p>
+
+<div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888;">
+    Sent because a SkillSwap session you participated in completed.
+</div>
+
+</body>
+</html>

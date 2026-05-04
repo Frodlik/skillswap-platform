@@ -73,6 +73,18 @@ services:
     networks:
       - skillswap
 
+  # Dev-only SMTP capture: catches every email on port 1025, exposes a UI
+  # at :8025 to read them. Nothing leaves the local machine.
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: skillswap-mailhog
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"
+      - "${MAILHOG_UI_PORT:-8025}:8025"
+    networks:
+      - skillswap
+
   # ─── Service discovery ──────────────────────────────────────────────────────
 
   eureka:
@@ -245,6 +257,32 @@ services:
       - "${SESSION_SERVICE_PORT:-8085}:8085"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  notification-service:
+    build:
+      context: .
+      args:
+        SERVICE: notification-service
+    image: skillswap/notification-service
+    container_name: skillswap-notification
+    <<: *service-defaults
+    environment:
+      <<: *service-env
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-8086}:8086"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8086/actuator/health"]
       interval: 15s
       timeout: 5s
       retries: 10
