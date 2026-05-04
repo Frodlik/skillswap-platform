@@ -23,9 +23,9 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(422, ex.getMessage(), req.getRequestURI(), Instant.now());
     }
 
-    @ExceptionHandler(DuplicateReviewException.class)
+    @ExceptionHandler({DuplicateReviewException.class, DuplicateReportException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
-    ErrorResponse handleDuplicate(DuplicateReviewException ex, HttpServletRequest req) {
+    ErrorResponse handleDuplicate(RuntimeException ex, HttpServletRequest req) {
         return new ErrorResponse(409, ex.getMessage(), req.getRequestURI(), Instant.now());
     }
 

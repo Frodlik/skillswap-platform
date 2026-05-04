@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+
+    <changeSet id="005-create-session-reports" author="skillswap">
+        <createTable tableName="session_reports">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="session_id" type="uuid">
+                <constraints nullable="false"
+                             foreignKeyName="fk_reports_session"
+                             references="sessions(id)"/>
+            </column>
+            <column name="reporter_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reported_user_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reason" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="comment" type="text"/>
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="resolved" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="resolved_by" type="uuid"/>
+            <column name="resolved_at" type="timestamptz"/>
+        </createTable>
+
+        <!-- One report per (session, reporter) pair — prevents spam from same user -->
+        <addUniqueConstraint tableName="session_reports"
+                             columnNames="session_id, reporter_id"
+                             constraintName="uq_reports_session_reporter"/>
+
+        <createIndex tableName="session_reports" indexName="idx_reports_reported_user">
+            <column name="reported_user_id"/>
+        </createIndex>
+        <createIndex tableName="session_reports" indexName="idx_reports_resolved">
+            <column name="resolved"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

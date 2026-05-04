@@ -3,7 +3,9 @@ package com.skillswap.sessionservice.controller;
 import com.skillswap.sessionservice.domain.TokenWallet;
 import com.skillswap.sessionservice.dto.request.CreateSessionRequest;
 import com.skillswap.sessionservice.dto.request.ReviewRequest;
+import com.skillswap.sessionservice.dto.request.SubmitReportRequest;
 import com.skillswap.sessionservice.dto.request.UpdateStatusRequest;
+import com.skillswap.sessionservice.dto.response.ReportResponse;
 import com.skillswap.sessionservice.dto.response.ReviewResponse;
 import com.skillswap.sessionservice.dto.response.RoomResponse;
 import com.skillswap.sessionservice.dto.response.SessionResponse;
@@ -12,6 +14,7 @@ import com.skillswap.sessionservice.dto.response.WalletBalanceResponse;
 import com.skillswap.sessionservice.exception.WalletNotFoundException;
 import com.skillswap.sessionservice.repository.TokenTransactionRepository;
 import com.skillswap.sessionservice.repository.TokenWalletRepository;
+import com.skillswap.sessionservice.service.ReportService;
 import com.skillswap.sessionservice.service.ReviewService;
 import com.skillswap.sessionservice.service.SessionService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -43,6 +46,7 @@ public class SessionController {
 
     private final SessionService sessionService;
     private final ReviewService reviewService;
+    private final ReportService reportService;
     private final TokenWalletRepository walletRepo;
     private final TokenTransactionRepository txRepo;
 
@@ -73,6 +77,13 @@ public class SessionController {
     ReviewResponse review(@PathVariable UUID sessionId,
                           @Valid @RequestBody ReviewRequest req) {
         return reviewService.submitReview(sessionId, req);
+    }
+
+    @PostMapping("/{sessionId}/report")
+    @ResponseStatus(HttpStatus.CREATED)
+    ReportResponse report(@PathVariable UUID sessionId,
+                          @Valid @RequestBody SubmitReportRequest req) {
+        return reportService.submitReport(sessionId, req);
     }
 
     @GetMapping("/user/{userId}")
