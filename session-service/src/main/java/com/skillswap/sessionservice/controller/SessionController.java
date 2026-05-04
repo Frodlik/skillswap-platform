@@ -5,6 +5,7 @@ import com.skillswap.sessionservice.dto.request.CreateSessionRequest;
 import com.skillswap.sessionservice.dto.request.ReviewRequest;
 import com.skillswap.sessionservice.dto.request.UpdateStatusRequest;
 import com.skillswap.sessionservice.dto.response.ReviewResponse;
+import com.skillswap.sessionservice.dto.response.RoomResponse;
 import com.skillswap.sessionservice.dto.response.SessionResponse;
 import com.skillswap.sessionservice.dto.response.TransactionResponse;
 import com.skillswap.sessionservice.dto.response.WalletBalanceResponse;
@@ -54,6 +55,11 @@ public class SessionController {
     @GetMapping("/{sessionId}")
     SessionResponse get(@PathVariable UUID sessionId) {
         return sessionService.getSession(sessionId);
+    }
+
+    @GetMapping("/{sessionId}/room")
+    RoomResponse room(@PathVariable UUID sessionId) {
+        return sessionService.getRoom(sessionId);
     }
 
     @PatchMapping("/{sessionId}/status")

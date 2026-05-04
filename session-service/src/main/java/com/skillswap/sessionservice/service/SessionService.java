@@ -4,6 +4,7 @@ import com.skillswap.sessionservice.domain.Review;
 import com.skillswap.sessionservice.domain.Session;
 import com.skillswap.sessionservice.domain.SessionStatus;
 import com.skillswap.sessionservice.dto.request.CreateSessionRequest;
+import com.skillswap.sessionservice.dto.response.RoomResponse;
 import com.skillswap.sessionservice.dto.response.SessionResponse;
 import com.skillswap.sessionservice.exception.SessionNotFoundException;
 import com.skillswap.sessionservice.messaging.SessionEventPublisher;
@@ -26,6 +27,9 @@ import java.util.UUID;
 public class SessionService {
 
     private static final Logger log = LoggerFactory.getLogger(SessionService.class);
+
+    private static final String JITSI_BASE_URL = "https://meet.jit.si";
+    private static final String ROOM_PREFIX    = "skillswap-";
 
     private final SessionRepository sessionRepo;
     private final ReviewRepository reviewRepo;
@@ -56,6 +60,15 @@ public class SessionService {
     public SessionResponse getSession(UUID id) {
         return toResponse(sessionRepo.findById(id)
                 .orElseThrow(() -> new SessionNotFoundException(id)));
+    }
+
+    @Transactional(readOnly = true)
+    public RoomResponse getRoom(UUID sessionId) {
+        if (!sessionRepo.existsById(sessionId)) {
+            throw new SessionNotFoundException(sessionId);
+        }
+        String roomName = ROOM_PREFIX + sessionId;
+        return new RoomResponse(roomName, JITSI_BASE_URL + "/" + roomName);
     }
 
     @Transactional(readOnly = true)
