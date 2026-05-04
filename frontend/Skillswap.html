@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Skillswap — Direction A</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: 'IBM Plex Sans', -apple-system, sans-serif; }
+  *, *::before, *::after { box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="directions/minimal-v2.jsx"></script>
+<script type="text/babel" src="directions/minimal-screens.jsx"></script>
+<script type="text/babel" src="directions/minimal-account.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "mode": "light",
+  "accent": "#7a3df7"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setT] = useTweaks(TWEAK_DEFAULTS);
+  const [k, setK] = React.useState(0);
+
+  React.useEffect(() => {
+    window.minTheme.mode = t.mode;
+    window.minTheme.accent = t.accent;
+    setK(x => x + 1);
+  }, [t.mode, t.accent]);
+
+  return (
+    <React.Fragment>
+      <DesignCanvas>
+        <DCSection
+          id="overview"
+          title="Skillswap · Direction A"
+          subtitle="Refined minimal · IBM Plex · electric violet · Linear-clean. 12 desktop screens covering the full user lifecycle.">
+          <DCPostIt width={300}>
+            <b>What's here · 12 screens</b><br/><br/>
+            <b>Discovery</b><br/>01 · Landing &nbsp; 02 · Browse<br/><br/>
+            <b>Matching & profile</b><br/>03 · Smart matching &nbsp; 04 · Public profile<br/><br/>
+            <b>Logistics</b><br/>05 · Schedule &nbsp; 06 · Dashboard<br/><br/>
+            <b>Account & token economy</b><br/>07 · Login / Register<br/>08 · My profile (edit)<br/>09 · My skills (offers + wants)<br/>10 · My sessions<br/>11 · Wallet & transactions<br/>12 · Review form<br/><br/>
+            Open <b>Tweaks</b> (top-right) to flip <b>light/dark</b> or change accent.
+          </DCPostIt>
+        </DCSection>
+
+        <DCSection
+          id="discovery"
+          title="Discovery"
+          subtitle="Landing · Browse">
+          <DCArtboard key={'l-'+k} id="landing" label="01 · Landing" width={1280} height={880}>
+            <MinLanding />
+          </DCArtboard>
+          <DCArtboard key={'b-'+k} id="browse" label="02 · Browse" width={1280} height={880}>
+            <MinBrowse />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="matching"
+          title="Matching & profile"
+          subtitle="Smart matching with weighted scoring · public profile">
+          <DCArtboard key={'m-'+k} id="match" label="03 · Smart matching" width={1280} height={880}>
+            <MinMatch />
+          </DCArtboard>
+          <DCArtboard key={'p-'+k} id="profile" label="04 · Profile" width={1280} height={880}>
+            <MinProfile />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="logistics"
+          title="Logistics"
+          subtitle="Schedule (week-grid) · Dashboard (your hours, swaps, history)">
+          <DCArtboard key={'s-'+k} id="schedule" label="05 · Schedule" width={1280} height={880}>
+            <MinSchedule />
+          </DCArtboard>
+          <DCArtboard key={'d-'+k} id="dashboard" label="06 · Dashboard" width={1280} height={880}>
+            <MinDashboard />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="account"
+          title="Account & onboarding"
+          subtitle="Login/Register · My profile (edit) · My skills (offers + wants)">
+          <DCArtboard key={'lg-'+k} id="login" label="07 · Login / Register" width={1280} height={880}>
+            <MinLogin />
+          </DCArtboard>
+          <DCArtboard key={'mp-'+k} id="myprofile" label="08 · My profile (edit)" width={1280} height={880}>
+            <MinMyProfile />
+          </DCArtboard>
+          <DCArtboard key={'mk-'+k} id="myskills" label="09 · My skills" width={1280} height={880}>
+            <MinMySkills />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="economy"
+          title="Sessions, wallet & reviews"
+          subtitle="The token economy in action — sessions list, credit balance + history, mutual review">
+          <DCArtboard key={'ms-'+k} id="mysessions" label="10 · My sessions" width={1280} height={880}>
+            <MinMySessions />
+          </DCArtboard>
+          <DCArtboard key={'w-'+k} id="wallet" label="11 · Wallet & transactions" width={1280} height={880}>
+            <MinWallet />
+          </DCArtboard>
+          <DCArtboard key={'r-'+k} id="review" label="12 · Review form" width={720} height={880}>
+            <MinReview />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="next" title="Next steps" subtitle="">
+          <DCPostIt width={280}>
+            Want me to:<br/><br/>
+            · turn this into a <b>clickable prototype</b><br/>
+            · add <b>messaging</b>, <b>onboarding</b>, or <b>live session</b><br/>
+            · push the aesthetic further<br/>
+            · spin off <b>mobile</b> screens<br/><br/>
+            Just say the word.
+          </DCPostIt>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Theme">
+          <TweakRadio label="Mode" value={t.mode} onChange={v => setT({mode: v})} options={[{value:'light',label:'Light'},{value:'dark',label:'Dark'}]} />
+          <TweakColor label="Accent" value={t.accent} onChange={v => setT({accent: v})} />
+        </TweakSection>
+      </TweaksPanel>
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

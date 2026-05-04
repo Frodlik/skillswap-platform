@@ -1,0 +1,13 @@
+# npm dependencies — installed by `npm install`, regenerable from package-lock.json
+node_modules/
+
+# Vite build output (production bundle)
+dist/
+
+# Vite cache
+.vite/
+
+# Local env overrides
+.env
+.env.local
+*.local

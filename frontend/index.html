@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <title>Skillswap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!--
+    IBM Plex Sans + Plex Mono — fonts used throughout the design.
+    `preconnect` opens an early TCP connection to the Google Fonts CDN
+    so the actual stylesheet loads ~100ms faster.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    html, body { margin: 0; padding: 0; background: #fafaf7; font-family: 'IBM Plex Sans', -apple-system, sans-serif; }
+    *, *::before, *::after { box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <!--
+    React mounts the entire UI inside this single <div>. Everything you
+    see in the browser is generated dynamically by main.jsx and below.
+  -->
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
