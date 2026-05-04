@@ -1,0 +1,19 @@
+# Tells Grafana to auto-load any *.json dashboard sitting in
+# /var/lib/grafana/dashboards (mounted from monitoring/grafana/dashboards/).
+#
+# Drop a community dashboard JSON into that folder and Grafana picks it up
+# on the next restart (or within `updateIntervalSeconds`).
+
+apiVersion: 1
+
+providers:
+  - name: skillswap
+    orgId: 1
+    folder: SkillSwap
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true

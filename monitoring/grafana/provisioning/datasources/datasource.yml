@@ -1,0 +1,14 @@
+# Auto-provisions a Prometheus datasource so Grafana doesn't need any
+# manual setup on first launch — just open http://localhost:3000 and
+# the datasource is already wired up.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

@@ -1,0 +1,45 @@
+# Prometheus scrape config for the SkillSwap stack.
+#
+# Targets are reached via the Docker network — service names from
+# docker-compose.yml resolve to container IPs automatically.
+#
+# Each Spring Boot service exposes /actuator/prometheus thanks to:
+#   pom.xml      → micrometer-registry-prometheus
+#   application.yml → management.endpoints.web.exposure.include: prometheus
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: skillswap-local
+
+scrape_configs:
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: spring-boot
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - 'eureka:8761'
+          - 'api-gateway:8080'
+          - 'auth-service:8081'
+          - 'user-service:8082'
+          - 'skill-service:8083'
+          - 'matching-service:8084'
+          - 'session-service:8085'
+          - 'notification-service:8086'
+        labels:
+          stack: skillswap
+    # Eureka requires basic-auth (eureka/eureka). Other services don't,
+    # so we attach credentials only when scraping eureka and rely on
+    # the relabel below to drop auth for everyone else.
+    basic_auth:
+      username: eureka
+      password: eureka
+    relabel_configs:
+      # Pretty 'instance' label: 'auth-service:8081' instead of full URL.
+      - source_labels: [__address__]
+        target_label: instance
