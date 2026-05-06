@@ -2,7 +2,7 @@ package com.skillswap.notificationservice.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +20,7 @@ import java.util.Map;
 // SMTP doesn't NACK the AMQP message back to the broker — losing one
 // notification email is far better than blocking the queue.
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
