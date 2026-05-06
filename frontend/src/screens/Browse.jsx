@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../theme/theme.jsx';
 import * as skillsApi from '../api/skills.js';
 import * as usersApi from '../api/users.js';
@@ -265,7 +266,12 @@ function SkillCard({ m, skill, profile }) {
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 500 }}>{teacherName}</div>
+          <Link
+            to={`/users/${skill.userId}`}
+            style={{ fontSize: 13, fontWeight: 500, color: m.ink, textDecoration: 'none', borderBottom: `1px dashed ${m.ink20}` }}
+          >
+            {teacherName}
+          </Link>
           <div style={{ fontSize: 11.5, color: m.ink50 }}>{teacherLocation}</div>
         </div>
         {profile?.rating != null && (

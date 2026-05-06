@@ -9,6 +9,7 @@ import Skills from './screens/Skills.jsx';
 import Sessions from './screens/Sessions.jsx';
 import Wallet from './screens/Wallet.jsx';
 import Profile from './screens/Profile.jsx';
+import UserProfile from './screens/UserProfile.jsx';
 import Browse from './screens/Browse.jsx';
 import Dashboard from './screens/Dashboard.jsx';
 
@@ -45,7 +46,8 @@ export default function App() {
               <Route path="/sessions"  element={<Sessions />} />
               <Route path="/wallet"    element={<Wallet />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/profile"   element={<Profile />} />
+              <Route path="/profile"        element={<Profile />} />
+              <Route path="/users/:userId"  element={<UserProfile />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

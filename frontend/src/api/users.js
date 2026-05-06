@@ -34,6 +34,15 @@ export async function updatePreferences(userId, payload) {
   return res.data;
 }
 
+// Read-only counterpart to updatePreferences. Used by the schedule-session
+// calendar to know when the OTHER user marked themselves available.
+// Returns PreferenceResponse:
+//   { id, userId, preferredLanguages, preferredTimezoneRange, availabilitySchedule }
+export async function getPreferences(userId) {
+  const res = await client.get(`/users/${userId}/preferences`);
+  return res.data;
+}
+
 // Convenience: fetch many profiles in parallel; missing ones become null
 // instead of throwing, so the UI can render a fallback for that row.
 export async function getProfiles(userIds) {

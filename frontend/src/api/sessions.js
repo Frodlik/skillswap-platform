@@ -48,6 +48,17 @@ export async function getTransactions(userId, page = 0, size = 50) {
   return res.data;          // Spring Page<TransactionResponse>
 }
 
+// Returns just busy slots for a user within [from, to). Each slot is
+//   { scheduledAt: ISO-8601 string, durationTokens: number }
+// — no skill name, no participants. Used by the AvailabilityCalendar
+// component when scheduling a new session against another user.
+export async function getBusySlots(userId, from, to) {
+  const res = await client.get(`/sessions/user/${userId}/busy`, {
+    params: { from: from.toISOString(), to: to.toISOString() },
+  });
+  return res.data;
+}
+
 // Returns { roomName, url } for a Jitsi Meet room.
 // URL is deterministic (skillswap-{sessionId}) so both teacher and learner
 // hitting this endpoint land in the same room.

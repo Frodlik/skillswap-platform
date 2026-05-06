@@ -10,6 +10,7 @@ import com.skillswap.skillservice.event.SkillCreatedEvent;
 import com.skillswap.skillservice.event.SkillOffered;
 import com.skillswap.skillservice.event.SkillWanted;
 import com.skillswap.skillservice.exception.CategoryNotFoundException;
+import com.skillswap.skillservice.exception.DuplicateSkillException;
 import com.skillswap.skillservice.exception.SkillNotFoundException;
 import com.skillswap.skillservice.repository.SkillCategoryRepository;
 import com.skillswap.skillservice.repository.UserSkillRepository;
@@ -46,6 +47,14 @@ public class SkillService {
         SkillCategory category = skillCategoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new CategoryNotFoundException(request.categoryId()));
 
+        // Trim leading/trailing whitespace so "Java " and "Java" don't slip
+        // past the case-insensitive uniqueness check by being technically
+        // distinct strings.
+        String name = request.name() == null ? "" : request.name().trim();
+        if (userSkillRepository.existsByUserIdAndTypeAndSkillNameIgnoreCase(userId, overrideType, name)) {
+            throw new DuplicateSkillException(name, overrideType);
+        }
+
         String[] tagsArray = request.tags() == null ? new String[0]
                 : request.tags().toArray(new String[0]);
 
@@ -53,7 +62,7 @@ public class SkillService {
                 .id(UUID.randomUUID())
                 .userId(userId)
                 .category(category)
-                .skillName(request.name())
+                .skillName(name)
                 .skillLevel(request.level())
                 .type(overrideType)
                 .tags(tagsArray)

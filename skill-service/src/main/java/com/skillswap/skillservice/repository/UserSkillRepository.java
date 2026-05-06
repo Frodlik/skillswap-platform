@@ -1,5 +1,6 @@
 package com.skillswap.skillservice.repository;
 
+import com.skillswap.skillservice.domain.SkillType;
 import com.skillswap.skillservice.domain.UserSkill;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +12,12 @@ import java.util.UUID;
 public interface UserSkillRepository extends JpaRepository<UserSkill, UUID> {
 
     List<UserSkill> findByUserId(UUID userId);
+
+    // Used by SkillService.addSkill to fail-fast with a clear 409 message
+    // before the DB unique index rejects the insert with a generic
+    // ConstraintViolationException. IgnoreCase mirrors the lower(skill_name)
+    // expression used in the unique index migration.
+    boolean existsByUserIdAndTypeAndSkillNameIgnoreCase(UUID userId, SkillType type, String skillName);
 
     @Query(value = """
             SELECT * FROM user_skills us

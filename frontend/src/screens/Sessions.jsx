@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../theme/theme.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import * as sessionsApi from '../api/sessions.js';
@@ -274,7 +275,13 @@ function SessionRow({ m, session, userId, isLast, onJoin, onCancel, onComplete, 
           </span>
         </div>
         <div style={{ fontSize: 11.5, color: m.ink50, fontFamily: m.mono }}>
-          with {shortId(otherUserId)}
+          with{' '}
+          <Link
+            to={`/users/${otherUserId}`}
+            style={{ color: m.ink70, textDecoration: 'none', borderBottom: `1px dashed ${m.ink20}` }}
+          >
+            {shortId(otherUserId)}
+          </Link>
         </div>
       </div>
       <span style={{ fontFamily: m.mono, fontSize: 13, color: costColor }}>{cost} cr</span>

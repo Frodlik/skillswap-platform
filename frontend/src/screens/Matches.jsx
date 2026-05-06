@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import * as matchesApi from '../api/matches.js';
 import * as usersApi from '../api/users.js';
 import * as sessionsApi from '../api/sessions.js';
+import AvailabilityCalendar from '../components/AvailabilityCalendar.jsx';
 
 // THE main thesis screen: weighted matching with a transparent breakdown.
 // Adapted from frontend/directions/minimal-screens.jsx · MinMatch.
@@ -191,12 +192,52 @@ function ScheduleSessionModal({ m, suggestion, userId, onClose, onScheduled }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  // Calendar context — fetched on mount, never refetched (modal is short-lived).
+  const [busySlots, setBusySlots] = useState([]);
+  const [theirSchedule, setTheirSchedule] = useState(null);
+
+  // Pull the OTHER user's busy slots and availability schedule once.
+  // We grab a 7-day window starting today (matching the calendar grid).
+  // Both fetches are .catch'd to null/empty so the calendar still renders
+  // — degraded — if a service is down.
+  useEffect(() => {
+    let cancelled = false;
+    const from = new Date();
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(from);
+    to.setDate(to.getDate() + 7);
+
+    async function load() {
+      const [slots, prefs] = await Promise.all([
+        sessionsApi.getBusySlots(suggestion.userId, from, to).catch(() => []),
+        usersApi.getPreferences(suggestion.userId).catch(() => null),
+      ]);
+      if (cancelled) return;
+      setBusySlots(slots || []);
+      // availabilitySchedule is stored as a JSON string. Parse here so the
+      // calendar component receives a ready-made object.
+      try {
+        if (prefs?.availabilitySchedule) {
+          setTheirSchedule(JSON.parse(prefs.availabilitySchedule));
+        }
+      } catch { /* malformed JSON — leave schedule null, treated as always-available */ }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [suggestion.userId]);
+
   // Esc closes modal
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  // When the user clicks a calendar cell, we update both the ISO state for
+  // submit AND the datetime-local string fed into the <input>.
+  function handleCalendarPick(date) {
+    setScheduledAt(toDatetimeLocalString(date));
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -237,50 +278,66 @@ function ScheduleSessionModal({ m, suggestion, userId, onClose, onScheduled }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
+          // Vertical layout with the form scrolling between a fixed header
+          // and a sticky footer of action buttons. Without this the modal
+          // overflows on FullHD laptops once the calendar is added — Submit
+          // ends up below the fold and is impossible to reach.
           width: 540,
           maxWidth: '92vw',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
           background: m.panel,
           color: m.ink,
           fontFamily: m.font,
           borderRadius: 12,
           boxShadow: `0 20px 60px ${m.ink20}`,
-          padding: 28,
+          overflow: 'hidden',  // children handle their own scroll
         }}
       >
-        <div
-          style={{
-            fontSize: 11,
-            fontFamily: m.mono,
-            color: m.ink50,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            marginBottom: 4,
-          }}
-        >
-          Schedule a session
-        </div>
-        <h3 style={{ fontSize: 22, letterSpacing: '-0.02em', fontWeight: 500, margin: '0 0 18px' }}>
-          With <span style={{ fontStyle: 'italic' }}>{otherName}</span>
-        </h3>
-
-        {error && (
+        {/* Fixed header — eyebrow + title + error banner */}
+        <div style={{ padding: '24px 28px 8px' }}>
           <div
-            role="alert"
             style={{
-              padding: '10px 14px',
-              borderRadius: 8,
-              background: '#fee',
-              color: '#902020',
-              border: '1px solid #f3c0c0',
-              fontSize: 13,
-              marginBottom: 14,
+              fontSize: 11,
+              fontFamily: m.mono,
+              color: m.ink50,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              marginBottom: 4,
             }}
           >
-            {error}
+            Schedule a session
           </div>
-        )}
+          <h3 style={{ fontSize: 22, letterSpacing: '-0.02em', fontWeight: 500, margin: '0 0 8px' }}>
+            With <span style={{ fontStyle: 'italic' }}>{otherName}</span>
+          </h3>
 
-        <form onSubmit={handleSubmit}>
+          {error && (
+            <div
+              role="alert"
+              style={{
+                padding: '10px 14px',
+                borderRadius: 8,
+                background: '#fee',
+                color: '#902020',
+                border: '1px solid #f3c0c0',
+                fontSize: 13,
+                marginTop: 10,
+              }}
+            >
+              {error}
+            </div>
+          )}
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 }}
+        >
+          {/* Scrollable middle. minHeight:0 + flex:1 + overflowY:auto is the
+              flex idiom for "fill available space, scroll if too tall". */}
+          <div style={{ padding: '8px 28px 18px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {/* Role toggle */}
           <FormLabel m={m}>Your role</FormLabel>
           <div style={{ display: 'flex', gap: 4, padding: 4, background: m.ink10, borderRadius: 9, width: 'fit-content', marginBottom: 14 }}>
@@ -324,13 +381,40 @@ function ScheduleSessionModal({ m, suggestion, userId, onClose, onScheduled }) {
             </div>
           </div>
 
+          {/* Calendar — shows when the other user is busy + when they marked
+              themselves available. Click a green cell to populate the datetime
+              input above. Visual is the headline UX fix that makes scheduling
+              not feel blind. */}
+          <div style={{ marginTop: 14 }}>
+            <FormLabel m={m}>Their week</FormLabel>
+            <AvailabilityCalendar
+              busySlots={busySlots}
+              schedule={theirSchedule}
+              selected={scheduledAt ? new Date(scheduledAt) : null}
+              durationHours={duration}
+              onPick={handleCalendarPick}
+            />
+          </div>
+
           <div style={{ marginTop: 12, fontSize: 12, color: m.ink50, fontFamily: m.mono }}>
             {role === 'learn'
               ? `${duration} ${duration === 1 ? 'token' : 'tokens'} will be HELD from your wallet, transferred on completion.`
               : `${duration} ${duration === 1 ? 'token' : 'tokens'} will be HELD from ${otherName}'s wallet, paid to you on completion.`}
           </div>
+          </div>{/* /scrollable middle */}
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+          {/* Sticky footer — buttons always visible regardless of how tall the
+              form gets. Top border provides a clear separation when content
+              above is mid-scroll. */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              padding: '14px 28px',
+              borderTop: `1px solid ${m.ink10}`,
+              background: m.panel,
+            }}
+          >
             <button
               type="submit"
               disabled={submitting}
@@ -553,6 +637,21 @@ function CandidateCard({ m, suggestion, isSelected, onClick }) {
             <> · ★ {Number(suggestion.profile.rating).toFixed(1)}</>
           )}
         </div>
+        {/* Compact skill summary — comma-separated names so the card stays one row tall.
+            Falls back to nothing if matching-service couldn't reach skill-service
+            (circuit breaker returned an empty list — see SkillServiceClient.emptySkills). */}
+        {suggestion.theirOffers?.length > 0 && (
+          <div style={{ fontSize: 12, color: m.ink70, marginBottom: 2 }}>
+            <span style={{ color: m.accent, fontFamily: m.mono, fontSize: 11 }}>TEACHES </span>
+            {suggestion.theirOffers.map((s) => s.name).join(', ')}
+          </div>
+        )}
+        {suggestion.theirWants?.length > 0 && (
+          <div style={{ fontSize: 12, color: m.ink70, marginBottom: 4 }}>
+            <span style={{ color: m.ink50, fontFamily: m.mono, fontSize: 11 }}>WANTS  </span>
+            {suggestion.theirWants.map((s) => s.name).join(', ')}
+          </div>
+        )}
         <div style={{ fontSize: 12.5, color: m.ink70 }}>↳ {topScorer?.explanation}</div>
       </div>
       <div style={{ textAlign: 'right' }}>
@@ -576,11 +675,39 @@ function SelectedDetail({ m, suggestion, acting, onAccept, onDecline }) {
     <div style={{ borderLeft: `1px solid ${m.ink10}`, padding: '24px 22px', background: m.panel }}>
       <Eyebrow m={m}>Best match · {Math.round(suggestion.totalScore * 100)}%</Eyebrow>
       <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', marginBottom: 4 }}>
-        {name}
+        <Link
+          to={`/users/${suggestion.userId}`}
+          style={{ color: m.ink, textDecoration: 'none', borderBottom: `1px dashed ${m.ink20}` }}
+        >
+          {name}
+        </Link>
       </div>
-      <div style={{ fontSize: 12.5, color: m.ink70, marginBottom: 18 }}>
+      <div style={{ fontSize: 12.5, color: m.ink70, marginBottom: 8 }}>
         {suggestion.profile?.bio || 'No bio yet.'}
       </div>
+      <Link
+        to={`/users/${suggestion.userId}`}
+        style={{ fontSize: 12, fontFamily: m.mono, color: m.accent, textDecoration: 'none', marginBottom: 18, display: 'inline-block' }}
+      >
+        View full profile →
+      </Link>
+      <div style={{ height: 18 }} />
+
+      {/* Skill summary — pills version, more readable than comma-list at this size.
+          Hidden entirely when both lists are empty so the layout doesn't show
+          a blank "What they bring" header. */}
+      {(suggestion.theirOffers?.length > 0 || suggestion.theirWants?.length > 0) && (
+        <>
+          <Eyebrow m={m}>What they bring</Eyebrow>
+          {suggestion.theirOffers?.length > 0 && (
+            <SkillPillRow m={m} label="Can teach" skills={suggestion.theirOffers} accent />
+          )}
+          {suggestion.theirWants?.length > 0 && (
+            <SkillPillRow m={m} label="Wants to learn" skills={suggestion.theirWants} />
+          )}
+          <div style={{ height: 18 }} />
+        </>
+      )}
 
       {/* Score breakdown — the heart of the demo */}
       <Eyebrow m={m}>Score breakdown</Eyebrow>
@@ -673,6 +800,39 @@ function Bar({ m, value }) {
   return (
     <div style={{ height: 4, borderRadius: 2, background: m.ink10, overflow: 'hidden' }}>
       <div style={{ width: `${clamped * 100}%`, height: '100%', background: m.accent }} />
+    </div>
+  );
+}
+
+// Pill-row used in the right pane to display a candidate's offers / wants.
+// `accent` flag colours the pills with the brand colour to make "Can teach"
+// visually distinct from the more neutral "Wants to learn" — at a glance
+// the user can tell which side is the supply and which is the demand.
+function SkillPillRow({ m, label, skills, accent = false }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        {skills.map((s, i) => (
+          <span
+            key={`${s.name}-${i}`}
+            title={s.tags?.length ? `tags: ${s.tags.join(', ')}` : undefined}
+            style={{
+              fontSize: 11.5,
+              fontFamily: m.mono,
+              padding: '3px 8px',
+              borderRadius: 999,
+              background: accent ? m.accentSoft : m.ink10,
+              color: accent ? m.accent : m.ink70,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {s.name}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

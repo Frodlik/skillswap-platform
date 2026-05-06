@@ -11,6 +11,7 @@ import com.skillswap.matchingservice.domain.MatchStatus;
 import com.skillswap.matchingservice.dto.response.MatchResponse;
 import com.skillswap.matchingservice.dto.response.MatchSuggestion;
 import com.skillswap.matchingservice.dto.response.ScoreBreakdown;
+import com.skillswap.matchingservice.dto.response.SkillBrief;
 import com.skillswap.matchingservice.exception.MatchNotFoundException;
 import com.skillswap.matchingservice.messaging.MatchEventPublisher;
 import com.skillswap.matchingservice.repository.KnownUserRepository;
@@ -49,11 +50,28 @@ public class MatchingService {
 
     @Transactional(readOnly = true)
     public List<MatchSuggestion> getSuggestions(UUID userId, int limit) {
+        // Filter out matches where the skill-match scorer is zero. Without a
+        // bilateral skill overlap a "match" is just timezone+language+rating
+        // noise — there's literally nothing the two users could swap, so
+        // surfacing it confuses people more than it helps.
+        //
+        // We over-fetch (limit*3) so the post-filter list still has enough
+        // rows to honour the requested limit — otherwise pure-noise matches
+        // at the top of the score order would shrink the response.
         return matchRepository
-                .findActiveSuggestions(userId, Instant.now(), PageRequest.of(0, limit))
+                .findActiveSuggestions(userId, Instant.now(), PageRequest.of(0, limit * 3))
                 .stream()
+                .filter(this::hasSkillOverlap)
+                .limit(limit)
                 .map(m -> toSuggestion(m, userId))
                 .toList();
+    }
+
+    private boolean hasSkillOverlap(com.skillswap.matchingservice.domain.Match m) {
+        if (m.getScoreBreakdown() == null) return false;
+        ScoreBreakdown bd = fromJson(m.getScoreBreakdown());
+        return bd.details().stream()
+                .anyMatch(d -> "skill-match".equals(d.name()) && d.value() > 0.0);
     }
 
     @Transactional
@@ -154,8 +172,23 @@ public class MatchingService {
     private MatchSuggestion toSuggestion(Match match, UUID requestingUserId) {
         UUID candidateId = match.getUserAId().equals(requestingUserId)
                 ? match.getUserBId() : match.getUserAId();
+
+        // One skill-service hop per suggestion. The circuit breaker on the
+        // client returns an empty list on failure, so we always render
+        // something — at worst, no skill chips for that one candidate.
+        List<SkillClientResponse> skills = skillServiceClient.getUserSkills(candidateId);
+        List<SkillBrief> theirOffers = skills.stream()
+                .filter(s -> "OFFER".equals(s.type()))
+                .map(s -> new SkillBrief(s.name(), s.tags() != null ? s.tags() : List.of()))
+                .toList();
+        List<SkillBrief> theirWants = skills.stream()
+                .filter(s -> "WANT".equals(s.type()))
+                .map(s -> new SkillBrief(s.name(), s.tags() != null ? s.tags() : List.of()))
+                .toList();
+
         return new MatchSuggestion(match.getId(), candidateId,
-                match.getTotalScore(), fromJson(match.getScoreBreakdown()));
+                match.getTotalScore(), fromJson(match.getScoreBreakdown()),
+                theirOffers, theirWants);
     }
 
     private MatchResponse toResponse(Match match) {

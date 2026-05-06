@@ -52,4 +52,14 @@ public class UserController {
                                          @Valid @RequestBody PreferenceUpdateRequest request) {
         return profileService.updatePreferences(id, request);
     }
+
+    // Read-only counterpart to PATCH above. Needed by the schedule-session
+    // calendar in the frontend, which paints "available" cells based on the
+    // OTHER user's availability schedule. Sensitive fields (rating,
+    // moderation flags, etc.) live elsewhere; preferences are explicitly
+    // user-set hints about availability and language — fine to expose.
+    @GetMapping("/{id}/preferences")
+    PreferenceResponse getPreferences(@PathVariable UUID id) {
+        return profileService.getPreferences(id);
+    }
 }

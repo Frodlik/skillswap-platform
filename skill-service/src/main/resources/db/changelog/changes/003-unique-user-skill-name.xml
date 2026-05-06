@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="003-unique-user-skill-name" author="skillswap">
+        <!--
+            Prevents the same user adding the same skill twice. Functional
+            unique index on lower(skill_name) so "Java" and "java" are
+            treated as the same skill — case-insensitive matching is the
+            user-facing intuition.
+
+            Liquibase has no native cross-platform DSL for functional
+            indexes, so we drop to native SQL with a rollback hint.
+        -->
+        <sql>
+            CREATE UNIQUE INDEX uq_user_skills_user_type_name
+            ON user_skills (user_id, type, lower(skill_name));
+        </sql>
+        <rollback>
+            DROP INDEX IF EXISTS uq_user_skills_user_type_name;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

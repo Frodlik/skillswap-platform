@@ -13,7 +13,9 @@ import client from './client.js';
 //         { name: 'jaccard',     weight: 0.20, value: 0.80, explanation: 'Jaccard A->B=0.85, B->A=0.75' },
 //         ...
 //       ]
-//     }
+//     },
+//     theirOffers: [{ name: 'Java', tags: ['java','spring'] }, ...],   // can teach
+//     theirWants:  [{ name: 'Python', tags: ['python','ml'] }, ...]    // wants to learn
 //   }
 //
 // MatchResponse (returned by accept/decline):

@@ -32,6 +32,12 @@ class GlobalExceptionHandler {
         return ErrorResponse.of(404, ex.getMessage(), req.getRequestURI());
     }
 
+    @ExceptionHandler(DuplicateSkillException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    ErrorResponse handleDuplicate(DuplicateSkillException ex, HttpServletRequest req) {
+        return ErrorResponse.of(409, ex.getMessage(), req.getRequestURI());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     ErrorResponse handleUnexpected(Exception ex, HttpServletRequest req) {

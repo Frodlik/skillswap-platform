@@ -4,8 +4,10 @@ import com.skillswap.sessionservice.domain.Review;
 import com.skillswap.sessionservice.domain.Session;
 import com.skillswap.sessionservice.domain.SessionStatus;
 import com.skillswap.sessionservice.dto.request.CreateSessionRequest;
+import com.skillswap.sessionservice.dto.response.BusySlotResponse;
 import com.skillswap.sessionservice.dto.response.RoomResponse;
 import com.skillswap.sessionservice.dto.response.SessionResponse;
+import com.skillswap.sessionservice.exception.SessionConflictException;
 import com.skillswap.sessionservice.exception.SessionNotFoundException;
 import com.skillswap.sessionservice.messaging.SessionEventPublisher;
 import com.skillswap.sessionservice.repository.ReviewRepository;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +31,9 @@ public class SessionService {
 
     private static final Logger log = LoggerFactory.getLogger(SessionService.class);
 
+    // Public Jitsi Meet — no account, no SFU/TURN to host. For a private
+    // deployment this would be swapped for the org's own Jitsi base URL
+    // and the controller would mint a JWT for the room.
     private static final String JITSI_BASE_URL = "https://meet.jit.si";
     private static final String ROOM_PREFIX    = "skillswap-";
 
@@ -38,6 +44,13 @@ public class SessionService {
 
     @Transactional
     public SessionResponse createSession(CreateSessionRequest req) {
+        // Compute the proposed time window before any side-effects so we can
+        // bail out with 409 *before* a wallet HOLD that would need rolling back.
+        Instant rangeStart = req.scheduledAt();
+        Instant rangeEnd   = rangeStart.plus(req.durationTokens(), ChronoUnit.HOURS);
+        assertNoConflict(req.teacherId(), "teacher", rangeStart, rangeEnd);
+        assertNoConflict(req.learnerId(), "learner", rangeStart, rangeEnd);
+
         UUID id = UUID.randomUUID();
         walletService.hold(req.learnerId(), req.durationTokens(), id);
 
@@ -54,6 +67,15 @@ public class SessionService {
         log.info("Created session id={} learner={} teacher={} cost={}",
                 id, req.learnerId(), req.teacherId(), req.durationTokens());
         return toResponse(session);
+    }
+
+    private void assertNoConflict(UUID userId, String role, Instant start, Instant end) {
+        var clashing = sessionRepo.findOverlapping(userId, start, end);
+        if (!clashing.isEmpty()) {
+            log.info("Conflict for {} userId={} new=[{},{}) existing={}",
+                    role, userId, start, end, clashing.getFirst().getId());
+            throw new SessionConflictException(role);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -74,6 +96,17 @@ public class SessionService {
     @Transactional(readOnly = true)
     public Page<SessionResponse> getUserSessions(UUID userId, Pageable pageable) {
         return sessionRepo.findByUser(userId, pageable).map(this::toResponse);
+    }
+
+    // Returns just the slots that overlap [from, to) — no skill or partner
+    // info — so the schedule-calendar can paint "busy" cells when planning
+    // a new session against another user. Includes both SCHEDULED and
+    // ACTIVE; CANCELLED/COMPLETED are excluded since they no longer block.
+    @Transactional(readOnly = true)
+    public List<BusySlotResponse> getBusySlots(UUID userId, Instant from, Instant to) {
+        return sessionRepo.findOverlapping(userId, from, to).stream()
+                .map(s -> new BusySlotResponse(s.getScheduledAt(), s.getDurationTokens()))
+                .toList();
     }
 
     @Transactional

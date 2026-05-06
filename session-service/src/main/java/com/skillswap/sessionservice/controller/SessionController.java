@@ -5,6 +5,7 @@ import com.skillswap.sessionservice.dto.request.CreateSessionRequest;
 import com.skillswap.sessionservice.dto.request.ReviewRequest;
 import com.skillswap.sessionservice.dto.request.SubmitReportRequest;
 import com.skillswap.sessionservice.dto.request.UpdateStatusRequest;
+import com.skillswap.sessionservice.dto.response.BusySlotResponse;
 import com.skillswap.sessionservice.dto.response.ReportResponse;
 import com.skillswap.sessionservice.dto.response.ReviewResponse;
 import com.skillswap.sessionservice.dto.response.RoomResponse;
@@ -35,6 +36,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -91,6 +94,13 @@ public class SessionController {
                                        @RequestParam(defaultValue = "0") int page,
                                        @RequestParam(defaultValue = "20") int size) {
         return sessionService.getUserSessions(userId, PageRequest.of(page, size));
+    }
+
+    @GetMapping("/user/{userId}/busy")
+    List<BusySlotResponse> userBusySlots(@PathVariable UUID userId,
+                                         @RequestParam Instant from,
+                                         @RequestParam Instant to) {
+        return sessionService.getBusySlots(userId, from, to);
     }
 
     @GetMapping("/user/{userId}/balance")

@@ -7,6 +7,7 @@
 
     <include file="db/changelog/changes/001-create-skill-categories.xml"/>
     <include file="db/changelog/changes/002-create-user-skills.xml"/>
+    <include file="db/changelog/changes/003-unique-user-skill-name.xml"/>
     <include file="db/changelog/data/001-seed-categories.xml"/>
 
 </databaseChangeLog>
