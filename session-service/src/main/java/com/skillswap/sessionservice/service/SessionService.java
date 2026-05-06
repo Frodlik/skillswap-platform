@@ -78,6 +78,7 @@ public class SessionService {
                 .build());
         log.info("Proposed session id={} proposer={} teacher={} learner={} cost={}",
                 id, req.proposerId(), req.teacherId(), req.learnerId(), req.durationTokens());
+        publisher.publishSessionProposed(session);
         return toResponse(session);
     }
 
@@ -96,6 +97,7 @@ public class SessionService {
         session.setStatus(SessionStatus.SCHEDULED);
         Session saved = sessionRepo.save(session);
         log.info("Session {} accepted by {} (PROPOSED -> SCHEDULED)", sessionId, actorId);
+        publisher.publishSessionAccepted(saved);
         return toResponse(saved);
     }
 
@@ -111,6 +113,7 @@ public class SessionService {
         session.setStatus(SessionStatus.REJECTED);
         Session saved = sessionRepo.save(session);
         log.info("Session {} declined by {} (PROPOSED -> REJECTED)", sessionId, actorId);
+        publisher.publishSessionDeclined(saved, false);
         return toResponse(saved);
     }
 

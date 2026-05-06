@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Session declined</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 40px auto; color: #1a1a1a; line-height: 1.6;">
+
+<h1 style="font-size: 24px; font-weight: 500; letter-spacing: -0.02em; margin: 0 0 12px;"
+    th:text="${autoExpired} ? 'Your session invitation expired' : 'Your session invitation was declined'">
+    Your session invitation was declined
+</h1>
+
+<p style="font-size: 15px; margin: 0 0 16px;" th:if="${autoExpired}">
+    The proposed start time for your <strong th:text="${skillName}">Skill</strong>
+    session passed without a response, so the system auto-cancelled
+    the invitation. Held credits have been released back to the learner.
+</p>
+
+<p style="font-size: 15px; margin: 0 0 16px;" th:unless="${autoExpired}">
+    The other side declined your <strong th:text="${skillName}">Skill</strong>
+    session invitation. Held credits have been released back to the learner —
+    no penalty either way.
+</p>
+
+<p style="font-size: 14.5px; margin: 0 0 16px;">
+    Want to try again?
+</p>
+
+<ul style="font-size: 14px; color: #555; padding-left: 20px;">
+    <li>Open <strong>/matches</strong> — propose to the same person at a
+        different time, or to one of your other ranked candidates.</li>
+    <li>The matching algorithm hasn't penalised either side; this is just
+        a calendar miss.</li>
+</ul>
+
+<div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888;">
+    Sent because a SkillSwap session you proposed was declined.
+</div>
+
+</body>
+</html>

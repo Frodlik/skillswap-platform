@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>New session invitation</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 40px auto; color: #1a1a1a; line-height: 1.6;">
+
+<h1 style="font-size: 24px; font-weight: 500; letter-spacing: -0.02em; margin: 0 0 12px;">
+    You have a new session invitation
+</h1>
+
+<p style="font-size: 15px; margin: 0 0 16px;">
+    Someone you matched with has proposed a swap session for
+    <strong th:text="${skillName}">Skill</strong>.
+</p>
+
+<div style="background: #f7f7f7; border-radius: 8px; padding: 14px 18px; margin: 16px 0;">
+    <div style="font-size: 12px; color: #888; font-family: monospace; text-transform: uppercase; letter-spacing: 0.06em;">
+        When
+    </div>
+    <div style="font-size: 15px; margin-top: 4px;" th:text="${scheduledAt}">2026-05-20T18:00:00Z</div>
+    <div style="font-size: 13px; color: #666; margin-top: 6px;">
+        <span th:text="${durationTokens}">1</span> hour(s)
+    </div>
+</div>
+
+<p style="font-size: 14.5px; margin: 0 0 16px;">
+    Open <strong>/sessions</strong> on SkillSwap and look for the
+    <strong>PENDING</strong> row — there's an Accept and a Decline button.
+    Until you respond, the invitation stays open and the corresponding
+    credit hold remains.
+</p>
+
+<p style="font-size: 13px; color: #666;">
+    No response by the proposed start time? The system auto-cancels the
+    invitation and you keep your wallet intact.
+</p>
+
+<div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888;">
+    Sent because you have a pending session invitation on SkillSwap.
+</div>
+
+</body>
+</html>

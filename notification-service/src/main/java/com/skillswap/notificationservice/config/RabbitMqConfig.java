@@ -26,11 +26,17 @@ public class RabbitMqConfig {
     public static final String MATCH_FOUND_QUEUE       = "notification-service.match-found";
     public static final String MATCH_ACCEPTED_QUEUE    = "notification-service.match-accepted";
     public static final String SESSION_COMPLETED_QUEUE = "notification-service.session-completed";
+    public static final String SESSION_PROPOSED_QUEUE  = "notification-service.session-proposed";
+    public static final String SESSION_ACCEPTED_QUEUE  = "notification-service.session-accepted";
+    public static final String SESSION_DECLINED_QUEUE  = "notification-service.session-declined";
 
     public static final String USER_REGISTERED_KEY   = "user.registered";
     public static final String MATCH_FOUND_KEY       = "match.found";
     public static final String MATCH_ACCEPTED_KEY    = "match.accepted";
     public static final String SESSION_COMPLETED_KEY = "session.completed";
+    public static final String SESSION_PROPOSED_KEY  = "session.proposed";
+    public static final String SESSION_ACCEPTED_KEY  = "session.accepted";
+    public static final String SESSION_DECLINED_KEY  = "session.declined";
 
     @Bean
     TopicExchange skillswapTopicExchange() {
@@ -41,6 +47,9 @@ public class RabbitMqConfig {
     @Bean Queue matchFoundQueue()       { return QueueBuilder.durable(MATCH_FOUND_QUEUE).build(); }
     @Bean Queue matchAcceptedQueue()    { return QueueBuilder.durable(MATCH_ACCEPTED_QUEUE).build(); }
     @Bean Queue sessionCompletedQueue() { return QueueBuilder.durable(SESSION_COMPLETED_QUEUE).build(); }
+    @Bean Queue sessionProposedQueue()  { return QueueBuilder.durable(SESSION_PROPOSED_QUEUE).build(); }
+    @Bean Queue sessionAcceptedQueue()  { return QueueBuilder.durable(SESSION_ACCEPTED_QUEUE).build(); }
+    @Bean Queue sessionDeclinedQueue()  { return QueueBuilder.durable(SESSION_DECLINED_QUEUE).build(); }
 
     @Bean
     Binding userRegisteredBinding(Queue userRegisteredQueue, TopicExchange skillswapTopicExchange) {
@@ -60,6 +69,21 @@ public class RabbitMqConfig {
     @Bean
     Binding sessionCompletedBinding(Queue sessionCompletedQueue, TopicExchange skillswapTopicExchange) {
         return BindingBuilder.bind(sessionCompletedQueue).to(skillswapTopicExchange).with(SESSION_COMPLETED_KEY);
+    }
+
+    @Bean
+    Binding sessionProposedBinding(Queue sessionProposedQueue, TopicExchange skillswapTopicExchange) {
+        return BindingBuilder.bind(sessionProposedQueue).to(skillswapTopicExchange).with(SESSION_PROPOSED_KEY);
+    }
+
+    @Bean
+    Binding sessionAcceptedBinding(Queue sessionAcceptedQueue, TopicExchange skillswapTopicExchange) {
+        return BindingBuilder.bind(sessionAcceptedQueue).to(skillswapTopicExchange).with(SESSION_ACCEPTED_KEY);
+    }
+
+    @Bean
+    Binding sessionDeclinedBinding(Queue sessionDeclinedQueue, TopicExchange skillswapTopicExchange) {
+        return BindingBuilder.bind(sessionDeclinedQueue).to(skillswapTopicExchange).with(SESSION_DECLINED_KEY);
     }
 
     @Bean

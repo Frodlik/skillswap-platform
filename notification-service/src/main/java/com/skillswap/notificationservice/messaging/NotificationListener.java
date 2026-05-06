@@ -3,7 +3,10 @@ package com.skillswap.notificationservice.messaging;
 import com.skillswap.notificationservice.config.RabbitMqConfig;
 import com.skillswap.notificationservice.event.MatchAcceptedEvent;
 import com.skillswap.notificationservice.event.MatchFoundEvent;
+import com.skillswap.notificationservice.event.SessionAcceptedEvent;
 import com.skillswap.notificationservice.event.SessionCompletedEvent;
+import com.skillswap.notificationservice.event.SessionDeclinedEvent;
+import com.skillswap.notificationservice.event.SessionProposedEvent;
 import com.skillswap.notificationservice.event.UserRegisteredEvent;
 import com.skillswap.notificationservice.service.EmailDirectory;
 import com.skillswap.notificationservice.service.EmailService;
@@ -64,6 +67,53 @@ public class NotificationListener {
                 "session-completed", Map.of("role", "teacher"));
         notifyOne(event.learnerId(), "Session completed — leave a review",
                 "session-completed", Map.of("role", "learner"));
+    }
+
+    // Consent flow: invitee gets a "you have a new invitation" email, while
+    // the proposer gets confirmation that their invite was sent. Two emails
+    // per event, one for each side.
+    @RabbitListener(queues = RabbitMqConfig.SESSION_PROPOSED_QUEUE)
+    public void onSessionProposed(SessionProposedEvent event) {
+        log.info("session.proposed sessionId={} invitee={}", event.sessionId(), event.inviteeId());
+        Map<String, Object> model = Map.of(
+                "skillName", event.skillName(),
+                "scheduledAt", event.scheduledAt().toString(),
+                "durationTokens", event.durationTokens()
+        );
+        notifyOne(event.inviteeId(),
+                "New session invitation: " + event.skillName(),
+                "session-proposed-invitee", model);
+        notifyOne(event.proposerId(),
+                "Invitation sent — awaiting their response",
+                "session-proposed-proposer", model);
+    }
+
+    @RabbitListener(queues = RabbitMqConfig.SESSION_ACCEPTED_QUEUE)
+    public void onSessionAccepted(SessionAcceptedEvent event) {
+        log.info("session.accepted sessionId={}", event.sessionId());
+        Map<String, Object> model = Map.of(
+                "skillName", event.skillName(),
+                "scheduledAt", event.scheduledAt().toString()
+        );
+        // Only the proposer needs an email — the invitee just clicked Accept
+        // and has the UI confirmation already; emailing them too would be noise.
+        notifyOne(event.proposerId(),
+                "Your session was accepted — see you at " + event.scheduledAt(),
+                "session-accepted", model);
+    }
+
+    @RabbitListener(queues = RabbitMqConfig.SESSION_DECLINED_QUEUE)
+    public void onSessionDeclined(SessionDeclinedEvent event) {
+        log.info("session.declined sessionId={} autoExpired={}", event.sessionId(), event.autoExpired());
+        Map<String, Object> model = Map.of(
+                "skillName", event.skillName(),
+                "autoExpired", event.autoExpired()
+        );
+        notifyOne(event.proposerId(),
+                event.autoExpired()
+                        ? "Your session invitation expired"
+                        : "Your session invitation was declined",
+                "session-declined", model);
     }
 
     // Looks up email in cache and dispatches; logs (without sending) when

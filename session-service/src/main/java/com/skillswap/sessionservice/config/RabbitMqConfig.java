@@ -20,6 +20,9 @@ public class RabbitMqConfig {
     public static final String MATCH_ACCEPTED_KEY    = "match.accepted";
     public static final String USER_REGISTERED_KEY   = "user.registered";
     public static final String SESSION_COMPLETED_KEY = "session.completed";
+    public static final String SESSION_PROPOSED_KEY  = "session.proposed";
+    public static final String SESSION_ACCEPTED_KEY  = "session.accepted";
+    public static final String SESSION_DECLINED_KEY  = "session.declined";
 
     @Bean
     TopicExchange skillswapTopicExchange() {
