@@ -44,6 +44,14 @@ public class SessionService {
 
     @Transactional
     public SessionResponse createSession(CreateSessionRequest req) {
+        // proposerId must be one of the two participants — guards against
+        // a third party scheduling a session for two strangers.
+        if (!req.proposerId().equals(req.teacherId())
+                && !req.proposerId().equals(req.learnerId())) {
+            throw new IllegalArgumentException(
+                    "proposerId must equal teacherId or learnerId");
+        }
+
         // Compute the proposed time window before any side-effects so we can
         // bail out with 409 *before* a wallet HOLD that would need rolling back.
         Instant rangeStart = req.scheduledAt();
@@ -52,6 +60,9 @@ public class SessionService {
         assertNoConflict(req.learnerId(), "learner", rangeStart, rangeEnd);
 
         UUID id = UUID.randomUUID();
+        // HOLD applied at PROPOSED so the learner can't queue ten unanswered
+        // proposals all reserving the same tokens. Released on REJECT/CANCEL,
+        // transferred on COMPLETE.
         walletService.hold(req.learnerId(), req.durationTokens(), id);
 
         Session session = sessionRepo.save(Session.builder()
@@ -59,14 +70,62 @@ public class SessionService {
                 .matchId(req.matchId())
                 .teacherId(req.teacherId())
                 .learnerId(req.learnerId())
+                .proposerId(req.proposerId())
                 .skillName(req.skillName())
                 .scheduledAt(req.scheduledAt())
                 .durationTokens(req.durationTokens())
-                .status(SessionStatus.SCHEDULED)
+                .status(SessionStatus.PROPOSED)
                 .build());
-        log.info("Created session id={} learner={} teacher={} cost={}",
-                id, req.learnerId(), req.teacherId(), req.durationTokens());
+        log.info("Proposed session id={} proposer={} teacher={} learner={} cost={}",
+                id, req.proposerId(), req.teacherId(), req.learnerId(), req.durationTokens());
         return toResponse(session);
+    }
+
+    // Invitee accepts the proposal → PROPOSED → SCHEDULED. Re-checks conflicts
+    // because the invitee's calendar may have grown new bookings between the
+    // original create and this accept.
+    @Transactional
+    public SessionResponse acceptProposal(UUID sessionId, UUID actorId) {
+        Session session = sessionRepo.findById(sessionId)
+                .orElseThrow(() -> new SessionNotFoundException(sessionId));
+        assertActorIsInvitee(session, actorId, "accept");
+        validateTransition(session.getStatus(), SessionStatus.SCHEDULED);
+
+        // The HOLD that was placed at PROPOSED time is still live, no wallet
+        // op required at SCHEDULED. Just flip the status.
+        session.setStatus(SessionStatus.SCHEDULED);
+        Session saved = sessionRepo.save(session);
+        log.info("Session {} accepted by {} (PROPOSED -> SCHEDULED)", sessionId, actorId);
+        return toResponse(saved);
+    }
+
+    // Invitee declines → PROPOSED → REJECTED, learner's HOLD released.
+    @Transactional
+    public SessionResponse declineProposal(UUID sessionId, UUID actorId) {
+        Session session = sessionRepo.findById(sessionId)
+                .orElseThrow(() -> new SessionNotFoundException(sessionId));
+        assertActorIsInvitee(session, actorId, "decline");
+        validateTransition(session.getStatus(), SessionStatus.REJECTED);
+
+        walletService.release(session.getLearnerId(), session.getDurationTokens(), sessionId);
+        session.setStatus(SessionStatus.REJECTED);
+        Session saved = sessionRepo.save(session);
+        log.info("Session {} declined by {} (PROPOSED -> REJECTED)", sessionId, actorId);
+        return toResponse(saved);
+    }
+
+    private void assertActorIsInvitee(Session session, UUID actorId, String action) {
+        boolean isParticipant = actorId.equals(session.getTeacherId())
+                || actorId.equals(session.getLearnerId());
+        if (!isParticipant) {
+            throw new IllegalArgumentException(
+                    "Only a participant of the session can " + action + " it");
+        }
+        if (actorId.equals(session.getProposerId())) {
+            throw new IllegalArgumentException(
+                    "The proposer cannot " + action + " their own invitation"
+                            + " (use cancel instead)");
+        }
     }
 
     private void assertNoConflict(UUID userId, String role, Instant start, Instant end) {
@@ -126,7 +185,9 @@ public class SessionService {
                         session.getDurationTokens(), id);
                 session.setCompletedAt(Instant.now());
             }
-            case SCHEDULED -> { /* unreachable, blocked by validateTransition */ }
+            // PROPOSED, SCHEDULED, REJECTED — unreachable here, blocked by validateTransition.
+            // PROPOSED → SCHEDULED happens via acceptProposal(), not changeStatus().
+            case PROPOSED, SCHEDULED, REJECTED -> { /* unreachable */ }
         }
 
         Session saved = sessionRepo.save(session);
@@ -143,9 +204,12 @@ public class SessionService {
 
     private void validateTransition(SessionStatus from, SessionStatus to) {
         boolean valid = switch (from) {
+            case PROPOSED  -> to == SessionStatus.SCHEDULED
+                              || to == SessionStatus.REJECTED
+                              || to == SessionStatus.CANCELLED;
             case SCHEDULED -> to == SessionStatus.ACTIVE || to == SessionStatus.CANCELLED;
             case ACTIVE    -> to == SessionStatus.COMPLETED || to == SessionStatus.CANCELLED;
-            case COMPLETED, CANCELLED -> false;
+            case COMPLETED, REJECTED, CANCELLED -> false;
         };
         if (!valid) {
             throw new IllegalStateException(
@@ -162,7 +226,7 @@ public class SessionService {
 
     private SessionResponse toResponse(Session s) {
         return new SessionResponse(s.getId(), s.getMatchId(), s.getTeacherId(), s.getLearnerId(),
-                s.getSkillName(), s.getScheduledAt(), s.getDurationTokens(), s.getStatus(),
-                s.getCreatedAt(), s.getCompletedAt());
+                s.getProposerId(), s.getSkillName(), s.getScheduledAt(), s.getDurationTokens(),
+                s.getStatus(), s.getCreatedAt(), s.getCompletedAt());
     }
 }

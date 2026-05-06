@@ -10,6 +10,7 @@ public record SessionResponse(
         UUID matchId,
         UUID teacherId,
         UUID learnerId,
+        UUID proposerId,
         String skillName,
         Instant scheduledAt,
         int durationTokens,

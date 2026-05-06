@@ -59,6 +59,12 @@ export default function Dashboard() {
   const wants = data.skills.filter((s) => s.type === 'WANT').length;
   const upcoming = data.sessions.filter((s) => s.status === 'SCHEDULED' || s.status === 'ACTIVE');
   const completed = data.sessions.filter((s) => s.status === 'COMPLETED').length;
+  // PROPOSED sessions where I'm NOT the proposer = pending action items —
+  // surface them on the dashboard so the user notices invitations even if
+  // they don't open /sessions directly.
+  const pendingForMe = data.sessions.filter(
+    (s) => s.status === 'PROPOSED' && s.proposerId !== userId
+  ).length;
 
   return (
     <div style={{ padding: '24px 40px', maxWidth: 1100, margin: '0 auto' }}>
@@ -93,7 +99,11 @@ export default function Dashboard() {
           eyebrow="Upcoming sessions"
           big={upcoming.length}
           unit={upcoming.length === 1 ? 'session' : 'sessions'}
-          sub={`${completed} completed lifetime`}
+          sub={
+            pendingForMe > 0
+              ? `⚠ ${pendingForMe} pending your response`
+              : `${completed} completed lifetime`
+          }
         />
         <StatCard
           m={m}

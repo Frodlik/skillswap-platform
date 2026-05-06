@@ -24,9 +24,10 @@ import { formatWhen, durationLabel } from '../utils/format.js';
 
 const FILTERS = [
   { key: 'all',       label: 'All',       statuses: null },
+  { key: 'pending',   label: 'Pending',   statuses: ['PROPOSED'] },
   { key: 'upcoming',  label: 'Upcoming',  statuses: ['SCHEDULED', 'ACTIVE'] },
   { key: 'completed', label: 'Completed', statuses: ['COMPLETED'] },
-  { key: 'cancelled', label: 'Cancelled', statuses: ['CANCELLED'] },
+  { key: 'cancelled', label: 'Cancelled', statuses: ['CANCELLED', 'REJECTED'] },
 ];
 
 export default function Sessions() {
@@ -93,6 +94,25 @@ export default function Sessions() {
     }
   }
 
+  // Consent flow: invitee responds to a PROPOSED session.
+  async function handleAccept(sessionId) {
+    try {
+      const updated = await sessionsApi.acceptProposal(sessionId, userId);
+      setSessions((prev) => prev.map((s) => (s.id === sessionId ? updated : s)));
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+    }
+  }
+
+  async function handleDecline(sessionId) {
+    try {
+      const updated = await sessionsApi.declineProposal(sessionId, userId);
+      setSessions((prev) => prev.map((s) => (s.id === sessionId ? updated : s)));
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+    }
+  }
+
   async function handleReviewSubmitted(reviewedSession) {
     setReviewModal(null);
     // No flag on SessionResponse for "I reviewed it" — we just close the modal.
@@ -114,6 +134,8 @@ export default function Sessions() {
           sessions={filtered}
           userId={userId}
           onJoin={handleJoin}
+          onAccept={handleAccept}
+          onDecline={handleDecline}
           onCancel={(id) => handleStatusChange(id, 'CANCELLED')}
           onComplete={(id) => handleStatusChange(id, 'COMPLETED')}
           onReview={(s) => setReviewModal(s)}
@@ -186,7 +208,7 @@ function Header({ m, counts, filter, onFilter }) {
 
 const COLS = '110px 200px 1fr 100px 130px 220px';
 
-function SessionsTable({ m, sessions, userId, onJoin, onCancel, onComplete, onReview, onReport }) {
+function SessionsTable({ m, sessions, userId, onJoin, onAccept, onDecline, onCancel, onComplete, onReview, onReport }) {
   return (
     <div style={{ background: m.panel, border: `1px solid ${m.ink10}`, borderRadius: 12, overflow: 'hidden' }}>
       <div
@@ -218,6 +240,8 @@ function SessionsTable({ m, sessions, userId, onJoin, onCancel, onComplete, onRe
           userId={userId}
           isLast={i === sessions.length - 1}
           onJoin={() => onJoin(s.id)}
+          onAccept={() => onAccept(s.id)}
+          onDecline={() => onDecline(s.id)}
           onCancel={() => onCancel(s.id)}
           onComplete={() => onComplete(s.id)}
           onReview={() => onReview(s)}
@@ -228,7 +252,7 @@ function SessionsTable({ m, sessions, userId, onJoin, onCancel, onComplete, onRe
   );
 }
 
-function SessionRow({ m, session, userId, isLast, onJoin, onCancel, onComplete, onReview, onReport }) {
+function SessionRow({ m, session, userId, isLast, onJoin, onAccept, onDecline, onCancel, onComplete, onReview, onReport }) {
   const isTeacher = session.teacherId === userId;
   const role = isTeacher ? 'teach' : 'learn';
   const otherUserId = isTeacher ? session.learnerId : session.teacherId;
@@ -288,7 +312,29 @@ function SessionRow({ m, session, userId, isLast, onJoin, onCancel, onComplete, 
       <span style={{ fontFamily: m.mono, fontSize: 11.5, color: m.ink70 }}>
         {session.durationTokens} {session.durationTokens === 1 ? 'token' : 'tokens'}
       </span>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, flexWrap: 'wrap' }}>
+        {/* PROPOSED: invitee sees Accept/Decline; proposer sees Awaiting + Cancel.
+            We branch on session.proposerId to know which side is the user. */}
+        {session.status === 'PROPOSED' && session.proposerId === userId && (
+          <>
+            <span style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, alignSelf: 'center' }}>
+              awaiting their response
+            </span>
+            <button type="button" onClick={onCancel} style={btnSecondary(m)}>
+              Cancel
+            </button>
+          </>
+        )}
+        {session.status === 'PROPOSED' && session.proposerId !== userId && (
+          <>
+            <button type="button" onClick={onAccept} style={btnPrimary(m)}>
+              Accept →
+            </button>
+            <button type="button" onClick={onDecline} style={btnSecondary(m)}>
+              Decline
+            </button>
+          </>
+        )}
         {(session.status === 'SCHEDULED' || session.status === 'ACTIVE') && (
           <button type="button" onClick={onJoin} style={btnPrimary(m)}>
             Join call →
@@ -309,7 +355,7 @@ function SessionRow({ m, session, userId, isLast, onJoin, onCancel, onComplete, 
             Leave review →
           </button>
         )}
-        {(session.status === 'COMPLETED' || session.status === 'CANCELLED') && (
+        {(session.status === 'COMPLETED' || session.status === 'CANCELLED' || session.status === 'REJECTED') && (
           <button type="button" onClick={onReport} style={btnReport(m)} title="Report incident">
             Report
           </button>
@@ -676,12 +722,16 @@ function Centered({ m, title, subtitle }) {
 
 function STATUS_STYLE(m, status) {
   switch (status) {
+    case 'PROPOSED':
+      return { bg: '#fff5d8', color: '#8a6d00', label: 'PENDING' };
     case 'ACTIVE':
       return { bg: m.accent, color: '#fff', label: '● LIVE' };
     case 'SCHEDULED':
       return { bg: m.ink, color: m.bg, label: 'UPCOMING' };
     case 'COMPLETED':
       return { bg: m.ink10, color: m.ink, label: 'COMPLETED' };
+    case 'REJECTED':
+      return { bg: 'transparent', color: m.ink50, label: 'DECLINED' };
     case 'CANCELLED':
       return { bg: 'transparent', color: m.ink50, label: 'CANCELLED' };
     default:

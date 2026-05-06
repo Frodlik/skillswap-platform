@@ -246,10 +246,15 @@ function ScheduleSessionModal({ m, suggestion, userId, onClose, onScheduled }) {
     try {
       const teacherId = role === 'learn' ? suggestion.userId : userId;
       const learnerId = role === 'learn' ? userId : suggestion.userId;
+      // proposerId is always the current user — they're the one clicking
+      // the button. The OTHER participant becomes the invitee on the
+      // backend side and must accept the proposal before the session
+      // becomes SCHEDULED.
       await sessionsApi.createSession({
         matchId: suggestion.matchId,
         teacherId,
         learnerId,
+        proposerId: userId,
         skillName: skillName.trim(),
         scheduledAt: new Date(scheduledAt).toISOString(),
         durationTokens: duration,
@@ -432,7 +437,7 @@ function ScheduleSessionModal({ m, suggestion, userId, onClose, onScheduled }) {
                 opacity: submitting ? 0.6 : 1,
               }}
             >
-              {submitting ? 'Booking…' : 'Book session →'}
+              {submitting ? 'Sending…' : 'Send invitation →'}
             </button>
             <button
               type="button"

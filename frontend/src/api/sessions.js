@@ -3,10 +3,14 @@ import client from './client.js';
 // Wrappers for /api/v1/sessions/* (session-service).
 //
 // SessionResponse:
-//   { id, matchId, teacherId, learnerId, skillName,
+//   { id, matchId, teacherId, learnerId, proposerId, skillName,
 //     scheduledAt, durationTokens,
-//     status: 'SCHEDULED'|'ACTIVE'|'COMPLETED'|'CANCELLED',
+//     status: 'PROPOSED'|'SCHEDULED'|'ACTIVE'|'COMPLETED'|'REJECTED'|'CANCELLED',
 //     createdAt, completedAt }
+//
+// proposerId — who clicked "Send invitation". The OTHER participant is the
+// invitee who must accept/decline. Sessions land in PROPOSED state; invitee
+// uses acceptProposal / declineProposal below to move them onward.
 //
 // WalletBalanceResponse:    { userId, balance, heldBalance, total }
 // TransactionResponse:      { id, walletId, amount,
@@ -28,8 +32,23 @@ export async function updateSessionStatus(sessionId, status) {
   return res.data;
 }
 
+// payload must include proposerId (who's sending the invitation).
 export async function createSession(payload) {
   const res = await client.post('/sessions', payload);
+  return res.data;
+}
+
+// Invitee accepts a PROPOSED session. Backend validates that actorId is the
+// participant who is NOT the proposer. PROPOSED → SCHEDULED.
+export async function acceptProposal(sessionId, actorId) {
+  const res = await client.post(`/sessions/${sessionId}/accept`, { actorId });
+  return res.data;
+}
+
+// Invitee declines a PROPOSED session. Releases the learner's token HOLD
+// and transitions PROPOSED → REJECTED.
+export async function declineProposal(sessionId, actorId) {
+  const res = await client.post(`/sessions/${sessionId}/decline`, { actorId });
   return res.data;
 }
 

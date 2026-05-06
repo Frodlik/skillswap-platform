@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+
+    <!--
+        Phase 7.2 — session consent flow.
+
+        Adds the proposer_id column so we can tell who started a booking
+        and therefore who is the "invitee" that needs to accept/decline.
+        Existing rows are back-filled with teacher_id (best guess: pre-flow
+        sessions were created by whoever-clicked-book, but we can't recover
+        that signal — teacher_id keeps NOT NULL invariant satisfied).
+
+        New SessionStatus values PROPOSED and REJECTED are pure Java enums
+        stored as VARCHAR — no DB enum to alter, only existing data is
+        unchanged.
+    -->
+    <changeSet id="006-add-proposer-id-to-sessions" author="skillswap">
+        <addColumn tableName="sessions">
+            <column name="proposer_id" type="uuid"/>
+        </addColumn>
+
+        <!-- Back-fill: existing sessions get the teacher as proposer.
+             Picked teacher_id over learner_id arbitrarily — both are
+             post-hoc guesses since the original UI didn't track this. -->
+        <sql>UPDATE sessions SET proposer_id = teacher_id WHERE proposer_id IS NULL;</sql>
+
+        <addNotNullConstraint tableName="sessions" columnName="proposer_id"/>
+    </changeSet>
+
+</databaseChangeLog>

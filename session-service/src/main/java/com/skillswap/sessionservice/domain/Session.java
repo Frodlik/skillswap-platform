@@ -38,6 +38,12 @@ public class Session {
     @Column(name = "learner_id", nullable = false, updatable = false)
     private UUID learnerId;
 
+    // Who initiated the booking (pressed "Send invitation" in the UI).
+    // Always equal to teacherId or learnerId — enforced in SessionService.
+    // The OTHER one is the invitee who must accept/decline.
+    @Column(name = "proposer_id", nullable = false, updatable = false)
+    private UUID proposerId;
+
     @Column(name = "skill_name", nullable = false, updatable = false)
     private String skillName;
 

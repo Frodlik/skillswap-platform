@@ -36,7 +36,7 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
     @Query(value = """
         SELECT * FROM sessions
         WHERE (teacher_id = :userId OR learner_id = :userId)
-          AND status IN ('SCHEDULED', 'ACTIVE')
+          AND status IN ('PROPOSED', 'SCHEDULED', 'ACTIVE')
           AND scheduled_at < :rangeEnd
           AND scheduled_at + duration_tokens * INTERVAL '1 hour' > :rangeStart
         """, nativeQuery = true)

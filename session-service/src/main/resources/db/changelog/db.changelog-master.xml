@@ -9,4 +9,5 @@
     <include file="db/changelog/changes/003-create-token-transactions.xml"/>
     <include file="db/changelog/changes/004-create-reviews.xml"/>
     <include file="db/changelog/changes/005-create-session-reports.xml"/>
+    <include file="db/changelog/changes/006-add-proposer-and-statuses.xml"/>
 </databaseChangeLog>

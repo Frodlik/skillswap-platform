@@ -2,6 +2,7 @@ package com.skillswap.sessionservice.controller;
 
 import com.skillswap.sessionservice.domain.TokenWallet;
 import com.skillswap.sessionservice.dto.request.CreateSessionRequest;
+import com.skillswap.sessionservice.dto.request.RespondToProposalRequest;
 import com.skillswap.sessionservice.dto.request.ReviewRequest;
 import com.skillswap.sessionservice.dto.request.SubmitReportRequest;
 import com.skillswap.sessionservice.dto.request.UpdateStatusRequest;
@@ -73,6 +74,21 @@ public class SessionController {
     SessionResponse updateStatus(@PathVariable UUID sessionId,
                                  @Valid @RequestBody UpdateStatusRequest req) {
         return sessionService.changeStatus(sessionId, req.status());
+    }
+
+    // Consent flow: invitee accepts or declines a PROPOSED session.
+    // The proposer cannot use these endpoints — they would need /status
+    // with CANCELLED to walk away from their own invitation.
+    @PostMapping("/{sessionId}/accept")
+    SessionResponse acceptProposal(@PathVariable UUID sessionId,
+                                   @Valid @RequestBody RespondToProposalRequest req) {
+        return sessionService.acceptProposal(sessionId, req.actorId());
+    }
+
+    @PostMapping("/{sessionId}/decline")
+    SessionResponse declineProposal(@PathVariable UUID sessionId,
+                                    @Valid @RequestBody RespondToProposalRequest req) {
+        return sessionService.declineProposal(sessionId, req.actorId());
     }
 
     @PostMapping("/{sessionId}/review")
