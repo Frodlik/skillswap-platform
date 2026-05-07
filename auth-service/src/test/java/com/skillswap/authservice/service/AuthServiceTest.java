@@ -45,6 +45,7 @@ class AuthServiceTest {
     @Mock CredentialsRepository credentialsRepository;
     @Mock RefreshTokenRepository refreshTokenRepository;
     @Mock JwtService jwtService;
+    @Mock BanService banService;
     @Mock
     ApplicationEventPublisher eventPublisher;
 
@@ -57,7 +58,7 @@ class AuthServiceTest {
                 Duration.ofMinutes(15), Duration.ofDays(7));
         authService = new AuthService(
                 credentialsRepository, refreshTokenRepository,
-                jwtService, passwordEncoder, eventPublisher, props);
+                jwtService, passwordEncoder, banService, eventPublisher, props);
     }
 
     // ---- register ----

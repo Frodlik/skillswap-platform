@@ -13,6 +13,7 @@ import com.skillswap.authservice.event.UserRegisteredEvent;
 import com.skillswap.authservice.exception.EmailAlreadyExistsException;
 import com.skillswap.authservice.exception.InvalidCredentialsException;
 import com.skillswap.authservice.exception.InvalidTokenException;
+import com.skillswap.authservice.exception.UserBannedException;
 import com.skillswap.authservice.repository.CredentialsRepository;
 import com.skillswap.authservice.repository.RefreshTokenRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -38,6 +39,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final BanService banService;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final long refreshTokenExpirySeconds;
 
@@ -45,12 +47,14 @@ public class AuthService {
                        RefreshTokenRepository refreshTokenRepository,
                        JwtService jwtService,
                        PasswordEncoder passwordEncoder,
+                       BanService banService,
                        ApplicationEventPublisher applicationEventPublisher,
                        JwtProperties jwtProperties) {
         this.credentialsRepository = credentialsRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
+        this.banService = banService;
         this.applicationEventPublisher = applicationEventPublisher;
         this.refreshTokenExpirySeconds = jwtProperties.refreshTokenExpiry().toSeconds();
     }
@@ -86,6 +90,10 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
+        if (banService.isCurrentlyBanned(credentials.getId())) {
+            throw new UserBannedException(credentials.getId());
+        }
+
         return issueTokenPair(credentials);
     }
 
@@ -107,6 +115,10 @@ public class AuthService {
 
         var credentials = credentialsRepository.findById(stored.getUserId())
                 .orElseThrow(() -> new InvalidTokenException("User not found"));
+
+        if (banService.isCurrentlyBanned(credentials.getId())) {
+            throw new UserBannedException(credentials.getId());
+        }
 
         return issueTokenPair(credentials);
     }

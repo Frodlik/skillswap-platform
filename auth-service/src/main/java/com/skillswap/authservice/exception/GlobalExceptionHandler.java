@@ -44,6 +44,12 @@ class GlobalExceptionHandler {
         return ErrorResponse.of(401, ex.getMessage(), request.getRequestURI());
     }
 
+    @ExceptionHandler(UserBannedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    ErrorResponse handleBanned(UserBannedException ex, HttpServletRequest request) {
+        return ErrorResponse.of(403, ex.getMessage(), request.getRequestURI());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     ErrorResponse handleUnexpected(Exception ex, HttpServletRequest request) {
