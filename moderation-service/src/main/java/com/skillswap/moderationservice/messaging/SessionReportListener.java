@@ -19,6 +19,11 @@ public class SessionReportListener {
     @RabbitListener(queues = RabbitMqConfig.SESSION_REPORT_QUEUE)
     public void handleReportSubmitted(SessionReportSubmittedEvent event) {
         log.info("Received session.report-submitted sourceId={}", event.sessionReportId());
-        reportService.createFromEvent(event);
+        try {
+            reportService.createFromEvent(event);
+        } catch (Exception e) {
+            log.error("Failed to process session report sourceId={}: {}",
+                    event.sessionReportId(), e.getMessage(), e);
+        }
     }
 }

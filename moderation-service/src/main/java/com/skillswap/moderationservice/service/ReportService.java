@@ -26,6 +26,7 @@ public class ReportService {
     @Transactional
     public void createFromEvent(SessionReportSubmittedEvent event) {
         if (reportRepo.existsBySourceId(event.sessionReportId())) {
+            log.info("Ignoring duplicate session report sourceId={}", event.sessionReportId());
             return;
         }
         ContentReport report = ContentReport.builder()
