@@ -7,5 +7,6 @@
 
     <include file="db/changelog/changes/001-create-credentials.xml"/>
     <include file="db/changelog/changes/002-create-refresh-tokens.xml"/>
+    <include file="db/changelog/changes/003-create-user-bans.xml"/>
 
 </databaseChangeLog>
