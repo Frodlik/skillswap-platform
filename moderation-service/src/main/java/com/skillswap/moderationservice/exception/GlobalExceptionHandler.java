@@ -24,7 +24,13 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(SanctionNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    ErrorResponse handleNotFound(SanctionNotFoundException ex, HttpServletRequest req) {
+    ErrorResponse handleSanctionNotFound(SanctionNotFoundException ex, HttpServletRequest req) {
+        return ErrorResponse.of(404, ex.getMessage(), req.getRequestURI());
+    }
+
+    @ExceptionHandler(ReportNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    ErrorResponse handleReportNotFound(ReportNotFoundException ex, HttpServletRequest req) {
         return ErrorResponse.of(404, ex.getMessage(), req.getRequestURI());
     }
 
