@@ -13,6 +13,7 @@ import com.skillswap.authservice.event.UserRegisteredEvent;
 import com.skillswap.authservice.exception.EmailAlreadyExistsException;
 import com.skillswap.authservice.exception.InvalidCredentialsException;
 import com.skillswap.authservice.exception.InvalidTokenException;
+import com.skillswap.authservice.exception.UserBannedException;
 import com.skillswap.authservice.repository.CredentialsRepository;
 import com.skillswap.authservice.repository.RefreshTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -147,6 +148,19 @@ class AuthServiceTest {
                     new LoginRequest("pw@test.com", "wrong")))
                     .isInstanceOf(InvalidCredentialsException.class);
         }
+
+        @Test
+        void bannedUser_throwsUserBannedException() {
+            UUID userId = UUID.randomUUID();
+            String hash = passwordEncoder.encode("secret");
+            Credentials creds = buildCredentials(userId, "banned@test.com", hash);
+
+            when(credentialsRepository.findByEmail("banned@test.com")).thenReturn(Optional.of(creds));
+            when(banService.isCurrentlyBanned(userId)).thenReturn(true);
+
+            assertThatThrownBy(() -> authService.login(new LoginRequest("banned@test.com", "secret")))
+                    .isInstanceOf(UserBannedException.class);
+        }
     }
 
     // ---- refresh ----
@@ -209,6 +223,22 @@ class AuthServiceTest {
             assertThatThrownBy(() -> authService.refresh(
                     new RefreshRequest(UUID.randomUUID().toString())))
                     .isInstanceOf(InvalidTokenException.class);
+        }
+
+        @Test
+        void bannedUser_throwsUserBannedException() {
+            UUID userId = UUID.randomUUID();
+            String rawToken = UUID.randomUUID().toString();
+            Credentials creds = buildCredentials(userId, "banned@test.com",
+                    passwordEncoder.encode("x"));
+            RefreshToken stored = buildRefreshToken(userId, rawToken, false, false);
+
+            when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(stored));
+            when(credentialsRepository.findById(userId)).thenReturn(Optional.of(creds));
+            when(banService.isCurrentlyBanned(userId)).thenReturn(true);
+
+            assertThatThrownBy(() -> authService.refresh(new RefreshRequest(rawToken)))
+                    .isInstanceOf(UserBannedException.class);
         }
     }
 

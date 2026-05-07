@@ -36,7 +36,7 @@ public class SanctionEventListener {
                 .type(banType)
                 .expiresAt(event.expiresAt())
                 .build());
-        log.warn("Ban applied userId={} type={}", event.userId(), event.type());
+        log.info("Ban applied userId={} type={}", event.userId(), event.type());
     }
 
     @RabbitListener(queues = RabbitMqConfig.USER_SANCTION_LIFTED_QUEUE)
