@@ -23,6 +23,7 @@ public class RabbitMqConfig {
     public static final String SESSION_PROPOSED_KEY  = "session.proposed";
     public static final String SESSION_ACCEPTED_KEY  = "session.accepted";
     public static final String SESSION_DECLINED_KEY  = "session.declined";
+    public static final String SESSION_REPORT_SUBMITTED_KEY = "session.report-submitted";
 
     @Bean
     TopicExchange skillswapTopicExchange() {

@@ -2,6 +2,7 @@ package com.skillswap.sessionservice.messaging;
 
 import com.skillswap.sessionservice.config.RabbitMqConfig;
 import com.skillswap.sessionservice.domain.Session;
+import com.skillswap.sessionservice.event.outbound.ReportSubmittedEvent;
 import com.skillswap.sessionservice.event.outbound.SessionAcceptedEvent;
 import com.skillswap.sessionservice.event.outbound.SessionCompletedEvent;
 import com.skillswap.sessionservice.event.outbound.SessionDeclinedEvent;
@@ -70,5 +71,14 @@ public class SessionEventPublisher {
         rabbitTemplate.convertAndSend(RabbitMqConfig.EXCHANGE,
                 RabbitMqConfig.SESSION_DECLINED_KEY, event);
         log.info("Published session.declined sessionId={} autoExpired={}", s.getId(), autoExpired);
+    }
+
+    public void publishReportSubmitted(UUID reportId, UUID reporterId,
+                                        UUID reportedUserId, String reason, String comment) {
+        var event = new ReportSubmittedEvent(reportId, reporterId, reportedUserId, reason, comment);
+        rabbitTemplate.convertAndSend(RabbitMqConfig.EXCHANGE,
+                RabbitMqConfig.SESSION_REPORT_SUBMITTED_KEY, event);
+        log.info("Published session.report-submitted reportId={} reportedUser={}",
+                reportId, reportedUserId);
     }
 }
