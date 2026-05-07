@@ -262,6 +262,32 @@ services:
       retries: 10
       start_period: 60s
 
+  moderation-service:
+    build:
+      context: .
+      args:
+        SERVICE: moderation-service
+    image: skillswap/moderation-service
+    container_name: skillswap-moderation
+    <<: *service-defaults
+    environment:
+      <<: *service-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    ports:
+      - "${MODERATION_SERVICE_PORT:-8087}:8087"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8087/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
   notification-service:
     build:
       context: .

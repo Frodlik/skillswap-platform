@@ -26,6 +26,7 @@ COPY skill-service/pom.xml         skill-service/
 COPY matching-service/pom.xml      matching-service/
 COPY session-service/pom.xml       session-service/
 COPY notification-service/pom.xml  notification-service/
+COPY moderation-service/pom.xml    moderation-service/
 
 # Pre-fetch dependencies. `|| true` because go-offline is best-effort under
 # multi-module reactors and may report errors that don't affect the package step.
@@ -41,6 +42,7 @@ COPY skill-service/src         skill-service/src
 COPY matching-service/src      matching-service/src
 COPY session-service/src       session-service/src
 COPY notification-service/src  notification-service/src
+COPY moderation-service/src    moderation-service/src
 
 RUN mvn -B -pl "${SERVICE}" -am package -DskipTests \
     && cp "${SERVICE}/target/"*.jar /workspace/app.jar
