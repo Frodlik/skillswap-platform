@@ -2,6 +2,7 @@ package com.skillswap.authservice.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -17,12 +18,18 @@ public class UserBan {
     @Column(name = "user_id", nullable = false, unique = true)
     private UUID userId;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String type; // TEMP_BAN or PERMANENT_BAN
+    private BanType type;
 
     @Column(name = "expires_at")
-    private Instant expiresAt; // null for PERMANENT_BAN
+    private Instant expiresAt;
 
-    @Column(name = "created_at", nullable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    public boolean isExpired() {
+        return type == BanType.TEMP_BAN && expiresAt != null && Instant.now().isAfter(expiresAt);
+    }
 }
