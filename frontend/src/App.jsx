@@ -2,7 +2,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ThemeProvider, useTheme } from './theme/theme.jsx';
 import { AuthProvider } from './auth/AuthContext.jsx';
 import RequireAuth from './auth/RequireAuth.jsx';
+import RequireModeratorAuth from './auth/RequireModeratorAuth.jsx';
 import Layout from './components/Layout.jsx';
+import ModLayout from './screens/mod/ModLayout.jsx';
 import Login from './screens/Login.jsx';
 import Matches from './screens/Matches.jsx';
 import Skills from './screens/Skills.jsx';
@@ -12,6 +14,9 @@ import Profile from './screens/Profile.jsx';
 import UserProfile from './screens/UserProfile.jsx';
 import Browse from './screens/Browse.jsx';
 import Dashboard from './screens/Dashboard.jsx';
+import ModQueue from './screens/mod/ModQueue.jsx';
+import ModUsers from './screens/mod/ModUsers.jsx';
+import ModUserDetail from './screens/mod/ModUserDetail.jsx';
 
 // Top of the component tree.
 //
@@ -48,6 +53,20 @@ export default function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile"        element={<Profile />} />
               <Route path="/users/:userId"  element={<UserProfile />} />
+            </Route>
+
+            {/* Moderator section ────────────────────────────────── */}
+            <Route
+              element={
+                <RequireModeratorAuth>
+                  <ModLayout />
+                </RequireModeratorAuth>
+              }
+            >
+              <Route path="/mod" element={<Navigate to="/mod/queue" replace />} />
+              <Route path="/mod/queue"         element={<ModQueue />} />
+              <Route path="/mod/users"         element={<ModUsers />} />
+              <Route path="/mod/users/:userId" element={<ModUserDetail />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
