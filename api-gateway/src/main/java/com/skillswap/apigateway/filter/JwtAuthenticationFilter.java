@@ -63,6 +63,14 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String userId = claims.getSubject();
             String role = Objects.requireNonNullElse(claims.get("role", String.class), "");
+
+            if (uri.startsWith("/api/v1/moderation/")) {
+                if (!"MODERATOR".equals(role) && !"ADMIN".equals(role)) {
+                    sendForbidden(response, uri, "Moderator or Admin role required");
+                    return;
+                }
+            }
+
             chain.doFilter(new HeaderEnrichingRequestWrapper(request, userId, role), response);
         } catch (JwtException e) {
             sendUnauthorized(response, uri, "Invalid or expired token");
@@ -80,6 +88,17 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.setContentType("application/json");
         objectMapper.writeValue(response.getWriter(), Map.of(
                 "status", 401,
+                "message", message,
+                "path", path,
+                "timestamp", Instant.now().toString()
+        ));
+    }
+
+    private void sendForbidden(HttpServletResponse response, String path, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json");
+        objectMapper.writeValue(response.getWriter(), Map.of(
+                "status", 403,
                 "message", message,
                 "path", path,
                 "timestamp", Instant.now().toString()

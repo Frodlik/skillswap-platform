@@ -3,10 +3,8 @@ package com.skillswap.skillservice.controller;
 import com.skillswap.skillservice.dto.response.SkillResponse;
 import com.skillswap.skillservice.service.SkillService;
 import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,5 +19,11 @@ class InternalSkillController {
     @GetMapping("/user/{id}")
     List<SkillResponse> getUserSkills(@PathVariable UUID id) {
         return skillService.getUserSkills(id);
+    }
+
+    @DeleteMapping("/{skillId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void deleteSkill(@PathVariable UUID skillId) {
+        skillService.deleteSkill(skillId);
     }
 }

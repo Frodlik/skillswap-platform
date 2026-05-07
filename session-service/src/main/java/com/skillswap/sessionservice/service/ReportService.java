@@ -7,6 +7,7 @@ import com.skillswap.sessionservice.dto.request.SubmitReportRequest;
 import com.skillswap.sessionservice.dto.response.ReportResponse;
 import com.skillswap.sessionservice.exception.DuplicateReportException;
 import com.skillswap.sessionservice.exception.SessionNotFoundException;
+import com.skillswap.sessionservice.messaging.SessionEventPublisher;
 import com.skillswap.sessionservice.repository.SessionRepository;
 import com.skillswap.sessionservice.repository.SessionReportRepository;
 import lombok.AllArgsConstructor;
@@ -33,6 +34,7 @@ public class ReportService {
 
     private final SessionReportRepository reportRepo;
     private final SessionRepository sessionRepo;
+    private final SessionEventPublisher eventPublisher;
 
     @Transactional
     public ReportResponse submitReport(UUID sessionId, SubmitReportRequest req) {
@@ -77,6 +79,10 @@ public class ReportService {
         long total = reportRepo.countByReportedUserId(reportedUserId);
         log.warn("Report submitted: session={} reporter={} reported={} reason={} totalAgainstUser={}",
                 sessionId, req.reporterId(), reportedUserId, req.reason(), total);
+
+        eventPublisher.publishReportSubmitted(
+                saved.getId(), saved.getReporterId(),
+                saved.getReportedUserId(), saved.getReason().name(), saved.getComment());
 
         // TODO Phase 6+: when total >= 3, publish "user.flagged" event so the
         // user-service can mark the account for moderator review and the

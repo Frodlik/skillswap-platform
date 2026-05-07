@@ -42,6 +42,12 @@ class FallbackController {
         return fallbackBody("session-service");
     }
 
+    @RequestMapping("/moderation")
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    Map<String, Object> moderationFallback() {
+        return fallbackBody("moderation-service");
+    }
+
     private Map<String, Object> fallbackBody(String service) {
         return Map.of(
                 "status", 503,

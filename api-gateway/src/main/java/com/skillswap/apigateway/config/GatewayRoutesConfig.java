@@ -63,6 +63,15 @@ class GatewayRoutesConfig {
     }
 
     @Bean
+    RouterFunction<ServerResponse> moderationServiceRoute() {
+        return route("moderation-service")
+                .route(path("/api/v1/moderation/**"), http())
+                .filter(lb("moderation-service"))
+                .filter(circuitBreaker("moderation-service", URI.create("forward:/fallback/moderation")))
+                .build();
+    }
+
+    @Bean
     RouterFunction<ServerResponse> authDocsRoute() {
         return route("auth-docs")
                 .route(path("/api-docs/auth"), http())
