@@ -40,6 +40,12 @@ class GlobalExceptionHandler {
         return ErrorResponse.of(409, ex.getMessage(), req.getRequestURI());
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    ErrorResponse handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest req) {
+        return ErrorResponse.of(400, ex.getMessage(), req.getRequestURI());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     ErrorResponse handleUnexpected(Exception ex, HttpServletRequest req) {

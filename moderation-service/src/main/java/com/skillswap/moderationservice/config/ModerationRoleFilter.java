@@ -45,6 +45,7 @@ public class ModerationRoleFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        return uri.startsWith("/actuator") || uri.startsWith("/v3/api-docs");
+        return uri.startsWith("/actuator") || uri.startsWith("/v3/api-docs")
+                || uri.startsWith("/swagger-ui");
     }
 }
