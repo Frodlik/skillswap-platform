@@ -1,6 +1,8 @@
 package com.skillswap.userservice.controller;
 
+import com.skillswap.userservice.dto.request.ModeratorProfilePatchRequest;
 import com.skillswap.userservice.dto.request.RatingUpdateRequest;
+import com.skillswap.userservice.dto.request.UpdateProfileRequest;
 import com.skillswap.userservice.dto.response.PreferenceResponse;
 import com.skillswap.userservice.dto.response.UserBriefResponse;
 import com.skillswap.userservice.service.ProfileService;
@@ -37,6 +39,14 @@ public class InternalUserController {
     ResponseEntity<Void> updateRating(@PathVariable UUID id,
                                       @RequestBody @Valid RatingUpdateRequest request) {
         profileService.updateRating(id, request.rating());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/profile")
+    ResponseEntity<Void> patchProfile(@PathVariable UUID id,
+                                      @Valid @RequestBody ModeratorProfilePatchRequest request) {
+        profileService.updateProfile(id, new UpdateProfileRequest(
+                request.displayName(), request.bio(), null, null, null, null));
         return ResponseEntity.noContent().build();
     }
 }
