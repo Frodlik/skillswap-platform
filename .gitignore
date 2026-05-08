@@ -34,8 +34,12 @@ Thumbs.db
 
 # Environment / secrets
 .env
+.env.example
 .env.local
 *.env
+
+# Dev scripts
+scripts/
 
 # Logs
 *.log
