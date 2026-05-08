@@ -298,8 +298,18 @@ services:
     <<: *service-defaults
     environment:
       <<: *service-env
-      MAIL_HOST: mailhog
-      MAIL_PORT: 1025
+      # Mail — defaults to MailHog (local dev).
+      # Override in .env to use Gmail or any real SMTP:
+      #   MAIL_HOST=smtp.gmail.com  MAIL_PORT=587
+      #   MAIL_SMTP_AUTH=true       MAIL_SMTP_STARTTLS=true
+      #   MAIL_USERNAME=...         MAIL_PASSWORD=...
+      MAIL_HOST: ${MAIL_HOST:-mailhog}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-false}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      NOTIFICATIONS_FROM: ${NOTIFICATIONS_FROM:-}
     depends_on:
       rabbitmq:
         condition: service_healthy
