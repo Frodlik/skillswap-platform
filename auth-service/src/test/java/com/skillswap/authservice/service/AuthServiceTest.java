@@ -5,8 +5,6 @@ import com.skillswap.authservice.domain.Credentials;
 import com.skillswap.authservice.domain.RefreshToken;
 import com.skillswap.authservice.domain.Role;
 import com.skillswap.authservice.dto.request.LoginRequest;
-import com.skillswap.authservice.dto.request.LogoutRequest;
-import com.skillswap.authservice.dto.request.RefreshRequest;
 import com.skillswap.authservice.dto.request.RegisterRequest;
 import com.skillswap.authservice.dto.response.TokenResponse;
 import com.skillswap.authservice.event.UserRegisteredEvent;
@@ -183,7 +181,7 @@ class AuthServiceTest {
             when(jwtService.generateAccessToken(userId, "USER")).thenReturn("new.at");
             when(jwtService.getAccessTokenExpirySeconds()).thenReturn(900L);
 
-            TokenResponse response = authService.refresh(new RefreshRequest(rawToken));
+            TokenResponse response = authService.refresh(rawToken);
 
             assertThat(response.accessToken()).isEqualTo("new.at");
             assertThat(stored.getRevokedAt()).isNotNull();   // old token revoked
@@ -197,7 +195,7 @@ class AuthServiceTest {
             when(refreshTokenRepository.findByTokenHash(anyString()))
                     .thenReturn(Optional.of(stored));
 
-            assertThatThrownBy(() -> authService.refresh(new RefreshRequest(rawToken)))
+            assertThatThrownBy(() -> authService.refresh(rawToken))
                     .isInstanceOf(InvalidTokenException.class)
                     .hasMessageContaining("revoked");
         }
@@ -210,7 +208,7 @@ class AuthServiceTest {
             when(refreshTokenRepository.findByTokenHash(anyString()))
                     .thenReturn(Optional.of(stored));
 
-            assertThatThrownBy(() -> authService.refresh(new RefreshRequest(rawToken)))
+            assertThatThrownBy(() -> authService.refresh(rawToken))
                     .isInstanceOf(InvalidTokenException.class)
                     .hasMessageContaining("expired");
         }
@@ -221,7 +219,7 @@ class AuthServiceTest {
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.refresh(
-                    new RefreshRequest(UUID.randomUUID().toString())))
+                            UUID.randomUUID().toString()))
                     .isInstanceOf(InvalidTokenException.class);
         }
 
@@ -237,7 +235,7 @@ class AuthServiceTest {
             when(credentialsRepository.findById(userId)).thenReturn(Optional.of(creds));
             when(banService.isCurrentlyBanned(userId)).thenReturn(true);
 
-            assertThatThrownBy(() -> authService.refresh(new RefreshRequest(rawToken)))
+            assertThatThrownBy(() -> authService.refresh(rawToken))
                     .isInstanceOf(UserBannedException.class);
         }
     }
@@ -255,7 +253,7 @@ class AuthServiceTest {
             when(refreshTokenRepository.findByTokenHash(anyString()))
                     .thenReturn(Optional.of(stored));
 
-            authService.logout(new LogoutRequest(rawToken));
+            authService.logout(rawToken);
 
             assertThat(stored.getRevokedAt()).isNotNull();
             verify(refreshTokenRepository).save(stored);
@@ -266,7 +264,7 @@ class AuthServiceTest {
             when(refreshTokenRepository.findByTokenHash(anyString()))
                     .thenReturn(Optional.empty());
 
-            authService.logout(new LogoutRequest(UUID.randomUUID().toString()));
+            authService.logout(UUID.randomUUID().toString());
 
             verify(refreshTokenRepository, never()).save(any());
         }

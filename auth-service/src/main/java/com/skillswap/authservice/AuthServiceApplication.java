@@ -1,12 +1,13 @@
 package com.skillswap.authservice;
 
 import com.skillswap.authservice.config.JwtProperties;
+import com.skillswap.authservice.config.CookieProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, CookieProperties.class})
 public class AuthServiceApplication {
 
     public static void main(String[] args) {

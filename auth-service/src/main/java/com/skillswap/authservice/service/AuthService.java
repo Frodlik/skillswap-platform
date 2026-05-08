@@ -5,8 +5,6 @@ import com.skillswap.authservice.domain.Credentials;
 import com.skillswap.authservice.domain.RefreshToken;
 import com.skillswap.authservice.domain.Role;
 import com.skillswap.authservice.dto.request.LoginRequest;
-import com.skillswap.authservice.dto.request.LogoutRequest;
-import com.skillswap.authservice.dto.request.RefreshRequest;
 import com.skillswap.authservice.dto.request.RegisterRequest;
 import com.skillswap.authservice.dto.response.TokenResponse;
 import com.skillswap.authservice.event.UserRegisteredEvent;
@@ -98,8 +96,8 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenResponse refresh(RefreshRequest request) {
-        String tokenHash = hashToken(request.refreshToken());
+    public TokenResponse refresh(String refreshToken) {
+        String tokenHash = hashToken(refreshToken);
 
         var stored = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new InvalidTokenException("Refresh token not found"));
@@ -124,8 +122,8 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(LogoutRequest request) {
-        String tokenHash = hashToken(request.refreshToken());
+    public void logout(String refreshToken) {
+        String tokenHash = hashToken(refreshToken);
 
         refreshTokenRepository.findByTokenHash(tokenHash).ifPresent(token -> {
             token.setRevokedAt(Instant.now());

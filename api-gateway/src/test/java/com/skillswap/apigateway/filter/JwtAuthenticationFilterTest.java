@@ -87,6 +87,7 @@ class JwtAuthenticationFilterTest {
     @Test
     void missingAuthHeader_shouldReturn401() throws Exception {
         var request = new MockHttpServletRequest("GET", "/api/v1/users/me");
+        // no Authorization header and no access_token cookie
         var response = new MockHttpServletResponse();
         var chain = new MockFilterChain();
 
@@ -102,6 +103,7 @@ class JwtAuthenticationFilterTest {
     void invalidBearerFormat_shouldReturn401() throws Exception {
         var request = new MockHttpServletRequest("GET", "/api/v1/users/me");
         request.addHeader("Authorization", "Basic dXNlcjpwYXNz");
+        // Basic auth scheme, no cookie either
         var response = new MockHttpServletResponse();
         var chain = new MockFilterChain();
 
@@ -109,6 +111,21 @@ class JwtAuthenticationFilterTest {
 
         assertThat(response.getStatus()).isEqualTo(401);
         assertThat(chain.getRequest()).isNull();
+    }
+
+    @Test
+    void validTokenInCookie_shouldInjectUserHeadersAndPassThrough() throws Exception {
+        var request = new MockHttpServletRequest("GET", "/api/v1/users/me");
+        request.setCookies(new jakarta.servlet.http.Cookie("access_token", validToken()));
+        var response = new MockHttpServletResponse();
+        var chain = new MockFilterChain();
+
+        filter.doFilterInternal(request, response, chain);
+
+        assertThat(chain.getRequest()).isNotNull();
+        HttpServletRequest forwarded = (HttpServletRequest) chain.getRequest();
+        assertThat(forwarded.getHeader("X-User-Id")).isEqualTo(USER_ID);
+        assertThat(forwarded.getHeader("X-User-Role")).isEqualTo("USER");
     }
 
     @Test

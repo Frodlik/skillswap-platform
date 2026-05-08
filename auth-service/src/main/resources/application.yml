@@ -37,6 +37,11 @@ jwt:
   access-token-expiry: PT15M
   refresh-token-expiry: P7D
 
+cookie:
+  secure: ${COOKIE_SECURE:false}
+  same-site: ${COOKIE_SAME_SITE:Strict}
+  domain: ${COOKIE_DOMAIN:}
+
 eureka:
   client:
     service-url:

@@ -6,6 +6,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -45,12 +46,24 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (header == null) {
-            sendUnauthorized(response, uri, "Missing Authorization header");
-            return;
+        String token = null;
+
+        if (header != null && header.startsWith("Bearer ")) {
+            token = header.substring(7);
+        } else {
+            Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (Cookie c : cookies) {
+                    if ("access_token".equals(c.getName())) {
+                        token = c.getValue();
+                        break;
+                    }
+                }
+            }
         }
-        if (!header.startsWith("Bearer ")) {
-            sendUnauthorized(response, uri, "Invalid Authorization scheme");
+
+        if (token == null) {
+            sendUnauthorized(response, uri, "Missing authentication token");
             return;
         }
 
@@ -58,7 +71,7 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
             var claims = Jwts.parser()
                     .verifyWith(publicKey)
                     .build()
-                    .parseSignedClaims(header.substring(7))
+                    .parseSignedClaims(token)
                     .getPayload();
 
             String userId = claims.getSubject();
