@@ -13,15 +13,18 @@ spring:
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASSWORD:guest}
   mail:
-    host: ${MAIL_HOST:localhost}
-    port: ${MAIL_PORT:1025}
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
     properties:
       mail:
         smtp:
-          # MailHog has no auth, no TLS — keep it that way locally.
-          auth: false
+          auth: ${MAIL_SMTP_AUTH:true}
           starttls:
-            enable: false
+            enable: ${MAIL_SMTP_STARTTLS:true}
+            required: true
   thymeleaf:
     # Email templates only — Thymeleaf doesn't need to serve HTTP responses.
     cache: true
@@ -29,7 +32,7 @@ spring:
     suffix: .html
 
 notifications:
-  from-email: ${NOTIFICATIONS_FROM:noreply@skillswap.dev}
+  from-email: ${NOTIFICATIONS_FROM:${MAIL_USERNAME:noreply@skillswap.dev}}
 
 eureka:
   client:
