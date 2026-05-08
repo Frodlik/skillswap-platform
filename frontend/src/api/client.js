@@ -15,22 +15,40 @@ const client = axios.create({
   timeout: 10_000,
 });
 
-// RESPONSE INTERCEPTOR ───────────────────────────────────────────────
-// On 401: clear local user metadata and redirect to /login.
-// We do NOT need to clear cookies — the browser discards expired cookies
-// automatically, and a fresh /login → new cookies will overwrite stale ones.
+// RESPONSE INTERCEPTOR — silent token refresh ────────────────────────
+// When any request returns 401 (access token expired):
+//   1. Attempt POST /auth/refresh — server reads the refresh_token cookie
+//      and issues new access_token + refresh_token cookies.
+//   2. If refresh succeeds, retry the original request (new cookie sent).
+//   3. If refresh also fails (refresh token expired/revoked), wipe local
+//      user metadata and redirect to /login.
+//
+// _isRetry flag prevents infinite loops: a 401 on the refresh call itself
+// falls straight through to the redirect.
+
 client.interceptors.response.use(
   (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('userId');
-      localStorage.removeItem('role');
-      localStorage.removeItem('email');
-      // Don't redirect if we're already on /login (avoid infinite loop)
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
+  async (err) => {
+    const original = err.config;
+
+    if (err.response?.status === 401 && !original._isRetry) {
+      original._isRetry = true;
+
+      try {
+        await client.post('/auth/refresh', null, { _isRetry: true });
+        // New cookies are now set by the server — retry with the same config.
+        return client(original);
+      } catch {
+        // Refresh failed: session is truly over.
+        localStorage.removeItem('userId');
+        localStorage.removeItem('role');
+        localStorage.removeItem('email');
+        if (!window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login';
+        }
       }
     }
+
     return Promise.reject(err);
   },
 );
