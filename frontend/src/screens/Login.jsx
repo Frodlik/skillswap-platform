@@ -41,9 +41,11 @@ export default function Login() {
     setSubmitting(true);
     try {
       const fn = tab === 'register' ? authApi.register : authApi.login;
-      const tokenResponse = await fn(email, password);
-      setAuth(tokenResponse, email);   // updates AuthContext + localStorage
-      navigate(redirectTo, { replace: true });
+      const authResponse = await fn(email, password);
+      setAuth(authResponse, email);
+      const { role } = authResponse;
+      const defaultDest = (role === 'MODERATOR' || role === 'ADMIN') ? '/mod/queue' : '/matches';
+      navigate(redirectTo === '/matches' ? defaultDest : redirectTo, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

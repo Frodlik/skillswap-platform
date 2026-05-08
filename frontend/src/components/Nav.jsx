@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTheme } from '../theme/theme.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
+import * as authApi from '../api/auth.js';
 
 // Top navigation bar. Rendered by <Layout> on every authenticated screen.
 // Adapted from frontend/directions/minimal-v2.jsx · MinNav with:
@@ -19,7 +20,7 @@ const NAV_ITEMS = [
 ];
 
 export default function Nav() {
-  const { m } = useTheme();
+  const { m, mode, setMode } = useTheme();
   const { email, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -38,7 +39,8 @@ export default function Nav() {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
-  function handleLogout() {
+  async function handleLogout() {
+    await authApi.logout();
     logout();
     navigate('/login', { replace: true });
   }
@@ -124,6 +126,30 @@ export default function Nav() {
           </NavLink>
         ))}
       </div>
+
+      {/* ─── Theme toggle ─── */}
+      <button
+        type="button"
+        onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')}
+        title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        style={{
+          background: m.ink10,
+          border: 'none',
+          borderRadius: 999,
+          padding: '5px 12px',
+          cursor: 'pointer',
+          fontFamily: m.mono,
+          fontSize: 12,
+          color: m.ink70,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+          marginRight: -8,
+        }}
+      >
+        {mode === 'dark' ? '☀' : '☾'}
+        <span>{mode === 'dark' ? 'light' : 'dark'}</span>
+      </button>
 
       {/* ─── Avatar + dropdown ─── */}
       <div style={{ position: 'relative' }} ref={menuRef}>

@@ -1,16 +1,16 @@
 import client from './client.js';
 
-// Thin wrappers around POST /api/v1/auth/*. Their job is to:
-//  1. Hide the URL path from screen components
-//  2. Return only the data we actually need (response.data, not the
-//     full axios response object)
-//  3. Translate axios errors into a small, predictable shape so the
-//     UI can render `error.message` without knowing about HTTP codes.
+// Thin wrappers around POST /api/v1/auth/*.
 //
-// All four endpoints use the same backend DTO shapes:
-//   request:  { email, password }              (or { refreshToken })
-//   response: { accessToken, refreshToken, expiresIn }   (TokenResponse)
-//   error:    { status, message, path, timestamp }       (ErrorResponse)
+// Auth tokens live exclusively in HttpOnly cookies managed by the server —
+// JavaScript can no longer read them (XSS protection). The response body
+// carries only non-sensitive metadata:
+//   request:  { email, password }
+//   response: { userId, role, expiresIn }   (AuthResponse)
+//   error:    { status, message, path, timestamp }
+//
+// The browser sends the access_token cookie automatically on every same-origin
+// request — no manual Authorization header injection needed.
 
 export async function register(email, password) {
   try {
@@ -30,12 +30,14 @@ export async function login(email, password) {
   }
 }
 
-export async function logout(refreshToken) {
-  // Best-effort. We always clear local state regardless of server reply.
+export async function logout() {
+  // Server revokes the refresh token (read from the cookie) and clears
+  // both cookies. We swallow errors so callers can always clear local
+  // state afterwards regardless of server response.
   try {
-    await client.post('/auth/logout', { refreshToken });
+    await client.post('/auth/logout');
   } catch {
-    // swallow — server may already have invalidated the token
+    // swallow — server may already have invalidated the session
   }
 }
 

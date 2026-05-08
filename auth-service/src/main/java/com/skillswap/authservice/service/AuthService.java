@@ -152,7 +152,8 @@ public class AuthService {
         refreshTokenRepository.save(refreshToken);
 
         return new TokenResponse(accessToken, rawRefreshToken,
-                jwtService.getAccessTokenExpirySeconds());
+                jwtService.getAccessTokenExpirySeconds(),
+                credentials.getId(), credentials.getRole().name());
     }
 
     private String hashToken(String token) {

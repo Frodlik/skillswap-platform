@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../theme/theme.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
+import * as authApi from '../../api/auth.js';
 
 const MOD_RED = '#d33b3b';
 
@@ -10,14 +11,15 @@ const NAV_TABS = [
 ];
 
 export default function ModLayout() {
-  const { m } = useTheme();
+  const { m, mode, setMode } = useTheme();
   const { email, logout } = useAuth();
   const navigate = useNavigate();
 
   const displayName = email ? email.split('@')[0] : '?';
   const initial = displayName.charAt(0).toUpperCase();
 
-  function handleLogout() {
+  async function handleLogout() {
+    await authApi.logout();
     logout();
     navigate('/login', { replace: true });
   }
@@ -80,8 +82,22 @@ export default function ModLayout() {
           ))}
         </div>
 
-        {/* Right: identity + logout on click */}
+        {/* Right: theme toggle + identity + logout */}
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')}
+            title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{
+              background: m.ink10, border: 'none', borderRadius: 999,
+              padding: '5px 12px', cursor: 'pointer',
+              fontFamily: m.mono, fontSize: 12, color: m.ink70,
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}
+          >
+            {mode === 'dark' ? '☀' : '☾'}
+            <span>{mode === 'dark' ? 'light' : 'dark'}</span>
+          </button>
           <button
             type="button"
             onClick={handleLogout}

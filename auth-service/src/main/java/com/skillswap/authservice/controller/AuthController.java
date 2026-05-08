@@ -36,14 +36,14 @@ public class AuthController {
     AuthResponse register(@Valid @RequestBody RegisterRequest request, HttpServletResponse response) {
         TokenResponse tokens = authService.register(request);
         writeTokenCookies(response, tokens);
-        return new AuthResponse(tokens.expiresIn());
+        return new AuthResponse(tokens.userId().toString(), tokens.role(), tokens.expiresIn());
     }
 
     @PostMapping("/login")
     AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         TokenResponse tokens = authService.login(request);
         writeTokenCookies(response, tokens);
-        return new AuthResponse(tokens.expiresIn());
+        return new AuthResponse(tokens.userId().toString(), tokens.role(), tokens.expiresIn());
     }
 
     @PostMapping("/refresh")
@@ -54,7 +54,7 @@ public class AuthController {
         }
         TokenResponse tokens = authService.refresh(refreshToken);
         writeTokenCookies(response, tokens);
-        return new AuthResponse(tokens.expiresIn());
+        return new AuthResponse(tokens.userId().toString(), tokens.role(), tokens.expiresIn());
     }
 
     @PostMapping("/logout")

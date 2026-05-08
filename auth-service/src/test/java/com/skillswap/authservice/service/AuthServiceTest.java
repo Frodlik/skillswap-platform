@@ -78,6 +78,8 @@ class AuthServiceTest {
             assertThat(response.accessToken()).isEqualTo("access.token");
             assertThat(response.refreshToken()).isNotBlank();
             assertThat(response.expiresIn()).isEqualTo(900L);
+            assertThat(response.userId()).isNotNull();
+            assertThat(response.role()).isEqualTo("USER");
 
             ArgumentCaptor<Credentials> credCap = ArgumentCaptor.forClass(Credentials.class);
             verify(credentialsRepository).save(credCap.capture());
@@ -123,6 +125,8 @@ class AuthServiceTest {
             TokenResponse response = authService.login(new LoginRequest("login@test.com", "secret"));
 
             assertThat(response.accessToken()).isEqualTo("at");
+            assertThat(response.userId()).isEqualTo(userId);
+            assertThat(response.role()).isEqualTo("USER");
         }
 
         @Test
