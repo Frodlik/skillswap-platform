@@ -69,6 +69,10 @@ jwt:
     - /api-docs/**
     - /v3/api-docs/**
 
+rate-limit:
+  auth-requests-per-minute: ${RATE_LIMIT_AUTH_RPM:20}
+  api-requests-per-minute: ${RATE_LIMIT_API_RPM:200}
+
 springdoc:
   api-docs:
     enabled: false
