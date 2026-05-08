@@ -15,43 +15,43 @@ class FallbackController {
     @RequestMapping("/auth")
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     Map<String, Object> authFallback() {
-        return fallbackBody("auth-service");
+        return fallbackBody();
     }
 
     @RequestMapping("/user")
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     Map<String, Object> userFallback() {
-        return fallbackBody("user-service");
+        return fallbackBody();
     }
 
     @RequestMapping("/skill")
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     Map<String, Object> skillFallback() {
-        return fallbackBody("skill-service");
+        return fallbackBody();
     }
 
     @RequestMapping("/matching")
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     Map<String, Object> matchingFallback() {
-        return fallbackBody("matching-service");
+        return fallbackBody();
     }
 
     @RequestMapping("/session")
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     Map<String, Object> sessionFallback() {
-        return fallbackBody("session-service");
+        return fallbackBody();
     }
 
     @RequestMapping("/moderation")
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     Map<String, Object> moderationFallback() {
-        return fallbackBody("moderation-service");
+        return fallbackBody();
     }
 
-    private Map<String, Object> fallbackBody(String service) {
+    private Map<String, Object> fallbackBody() {
         return Map.of(
                 "status", 503,
-                "message", service + " is temporarily unavailable",
+                "message", "Service temporarily unavailable. Please try again later.",
                 "timestamp", Instant.now().toString()
         );
     }
