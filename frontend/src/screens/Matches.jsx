@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../theme/theme.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import * as matchesApi from '../api/matches.js';
 import * as usersApi from '../api/users.js';
 import * as sessionsApi from '../api/sessions.js';
+import * as skillsApi from '../api/skills.js';
 import AvailabilityCalendar from '../components/AvailabilityCalendar.jsx';
 
 // THE main thesis screen: weighted matching with a transparent breakdown.
@@ -55,7 +56,9 @@ export default function Matches() {
   const userId = user?.sub;
 
   const [suggestions, setSuggestions] = useState([]);
+  const [mySkills, setMySkills] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [sort, setSort] = useState('score'); // 'score' | 'learn' | 'teach'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [acting, setActing] = useState(false);   // accept/decline in flight
@@ -70,12 +73,16 @@ export default function Matches() {
       setLoading(true);
       setError(null);
       try {
-        const list = await matchesApi.getSuggestions(userId, 10);
+        const [list, skills] = await Promise.all([
+          matchesApi.getSuggestions(userId, 10),
+          skillsApi.getUserSkills(userId).catch(() => []),
+        ]);
         // Enrich each candidate with its profile (parallel, fault-tolerant)
         const profiles = await usersApi.getProfiles(list.map((s) => s.userId));
         const enriched = list.map((s, i) => ({ ...s, profile: profiles[i] }));
         if (!cancelled) {
           setSuggestions(enriched);
+          setMySkills(skills);
           setSelectedId(enriched[0]?.matchId || null);
         }
       } catch (err) {
@@ -93,23 +100,11 @@ export default function Matches() {
     };
   }, [userId]);
 
-  // Accept the match AND open the scheduling modal in one click.
-  // (Accepting a match without booking would leave it in a half-state.)
-  async function handleAcceptAndSchedule(suggestion) {
-    setActing(true);
-    try {
-      await matchesApi.acceptMatch(suggestion.matchId);
-      setScheduleModal(suggestion);
-    } catch (err) {
-      // 409 means it was already accepted earlier — still let them schedule.
-      if (err.response?.status === 409) {
-        setScheduleModal(suggestion);
-      } else {
-        setError(err.response?.data?.message || err.message);
-      }
-    } finally {
-      setActing(false);
-    }
+  // Just open the scheduling modal. acceptMatch is deferred to handleSubmit
+  // inside the modal so that clicking Cancel doesn't silently accept the match
+  // and cause it to vanish from the suggestions list on the next page load.
+  function handleAcceptAndSchedule(suggestion) {
+    setScheduleModal(suggestion);
   }
 
   function handleScheduled(suggestion) {
@@ -138,35 +133,81 @@ export default function Matches() {
     });
   }
 
+  const myOfferNames = useMemo(
+    () => new Set(mySkills.filter((s) => s.type === 'OFFER').map((s) => s.name.toLowerCase())),
+    [mySkills],
+  );
+  const myWantNames = useMemo(
+    () => new Set(mySkills.filter((s) => s.type === 'WANT').map((s) => s.name.toLowerCase())),
+    [mySkills],
+  );
+
+  const sortedSuggestions = useMemo(() => {
+    const overlap = (list, names) =>
+      (list || []).filter((s) => names.has(s.name.toLowerCase())).length;
+
+    if (sort === 'score') return suggestions;
+
+    // With actual skill data: filter to candidates with at least one overlap,
+    // then sort descending by overlap count.
+    // Without data (mySkills not loaded): show all sorted by score.
+    const hasData = myOfferNames.size > 0 || myWantNames.size > 0;
+    const base = hasData
+      ? suggestions.filter((s) =>
+          sort === 'teach'
+            ? overlap(s.theirWants, myOfferNames) > 0
+            : overlap(s.theirOffers, myWantNames) > 0,
+        )
+      : suggestions;
+
+    return [...base].sort((a, b) =>
+      sort === 'teach'
+        ? overlap(b.theirWants, myOfferNames) - overlap(a.theirWants, myOfferNames)
+        : overlap(b.theirOffers, myWantNames) - overlap(a.theirOffers, myWantNames),
+    );
+  }, [suggestions, sort, myOfferNames, myWantNames]);
+
   // ─── Render branches ─────────────────────────────────────────
   if (loading) return <CenteredMessage m={m} title="Loading matches…" />;
   if (error) return <CenteredMessage m={m} title="Couldn't load matches" subtitle={error} />;
   if (suggestions.length === 0) return <EmptyState m={m} />;
 
-  const selected = suggestions.find((s) => s.matchId === selectedId) || suggestions[0];
+  const selected = sortedSuggestions.find((s) => s.matchId === selectedId) || sortedSuggestions[0];
+  const filterEmpty = sortedSuggestions.length === 0;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr 380px', minHeight: 'calc(100vh - 65px)' }}>
-      <LeftPane m={m} count={suggestions.length} />
+    <div style={{ display: 'grid', gridTemplateColumns: `320px 1fr ${filterEmpty ? '0' : '380px'}`, minHeight: 'calc(100vh - 65px)' }}>
+      <LeftPane m={m} count={sortedSuggestions.length} />
       <CandidatesList
         m={m}
-        suggestions={suggestions}
-        selectedId={selected.matchId}
+        suggestions={sortedSuggestions}
+        totalCount={suggestions.length}
+        selectedId={selected?.matchId}
+        sort={sort}
+        onSort={setSort}
+        myOfferNames={myOfferNames}
+        myWantNames={myWantNames}
         onSelect={setSelectedId}
       />
-      <SelectedDetail
-        m={m}
-        suggestion={selected}
-        acting={acting}
-        onAccept={() => handleAcceptAndSchedule(selected)}
-        onDecline={() => handleDecline(selected.matchId)}
-      />
+      {!filterEmpty && (
+        <SelectedDetail
+          m={m}
+          suggestion={selected}
+          myOfferNames={myOfferNames}
+          myWantNames={myWantNames}
+          declining={acting}
+          onAccept={() => handleAcceptAndSchedule(selected)}
+          onDecline={() => handleDecline(selected.matchId)}
+        />
+      )}
 
       {scheduleModal && (
         <ScheduleSessionModal
           m={m}
           suggestion={scheduleModal}
           userId={userId}
+          myOfferNames={myOfferNames}
+          myWantNames={myWantNames}
           onClose={() => setScheduleModal(null)}
           onScheduled={() => handleScheduled(scheduleModal)}
         />
@@ -177,7 +218,7 @@ export default function Matches() {
 
 // ─── Schedule session modal ─────────────────────────────────────
 
-function ScheduleSessionModal({ m, suggestion, userId, onClose, onScheduled }) {
+function ScheduleSessionModal({ m, suggestion, userId, myOfferNames, myWantNames, onClose, onScheduled }) {
   // Pick a sensible default datetime: tomorrow at 17:00 local time, formatted
   // for <input type="datetime-local"> which wants `YYYY-MM-DDTHH:mm`.
   const tomorrow = new Date();
@@ -185,7 +226,20 @@ function ScheduleSessionModal({ m, suggestion, userId, onClose, onScheduled }) {
   tomorrow.setHours(17, 0, 0, 0);
   const defaultDateTime = toDatetimeLocalString(tomorrow);
 
-  const [role, setRole] = useState('learn');         // 'learn' | 'teach'
+  // Determine which roles are available based on skill overlap.
+  // canLearn: they offer something I want. canTeach: they want something I offer.
+  const canLearn = (suggestion.theirOffers || []).some((s) =>
+    myWantNames?.has(s.name.toLowerCase()),
+  );
+  const canTeach = (suggestion.theirWants || []).some((s) =>
+    myOfferNames?.has(s.name.toLowerCase()),
+  );
+  // If neither side has a named overlap (e.g., skills not yet loaded), allow both.
+  const showLearn = canLearn || (!canLearn && !canTeach);
+  const showTeach = canTeach || (!canLearn && !canTeach);
+  const defaultRole = canTeach && !canLearn ? 'teach' : 'learn';
+
+  const [role, setRole] = useState(defaultRole);     // 'learn' | 'teach'
   const [skillName, setSkillName] = useState('');
   const [scheduledAt, setScheduledAt] = useState(defaultDateTime);
   const [duration, setDuration] = useState(1);
@@ -244,12 +298,16 @@ function ScheduleSessionModal({ m, suggestion, userId, onClose, onScheduled }) {
     setSubmitting(true);
     setError(null);
     try {
+      // Accept the match here — only when the user actually confirms scheduling,
+      // not on modal open. 409 = already accepted by either side, which is fine.
+      try {
+        await matchesApi.acceptMatch(suggestion.matchId);
+      } catch (err) {
+        if (err.response?.status !== 409) throw err;
+      }
+
       const teacherId = role === 'learn' ? suggestion.userId : userId;
       const learnerId = role === 'learn' ? userId : suggestion.userId;
-      // proposerId is always the current user — they're the one clicking
-      // the button. The OTHER participant becomes the invitee on the
-      // backend side and must accept the proposal before the session
-      // becomes SCHEDULED.
       await sessionsApi.createSession({
         matchId: suggestion.matchId,
         teacherId,
@@ -343,12 +401,21 @@ function ScheduleSessionModal({ m, suggestion, userId, onClose, onScheduled }) {
           {/* Scrollable middle. minHeight:0 + flex:1 + overflowY:auto is the
               flex idiom for "fill available space, scroll if too tall". */}
           <div style={{ padding: '8px 28px 18px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
-          {/* Role toggle */}
+          {/* Role toggle — only show options where there's an actual skill match.
+              If only one direction has overlap, we skip the toggle entirely. */}
           <FormLabel m={m}>Your role</FormLabel>
-          <div style={{ display: 'flex', gap: 4, padding: 4, background: m.ink10, borderRadius: 9, width: 'fit-content', marginBottom: 14 }}>
-            <RoleOption m={m} active={role === 'learn'} onClick={() => setRole('learn')} label={`I'll learn from ${otherName.split(' ')[0]}`} />
-            <RoleOption m={m} active={role === 'teach'} onClick={() => setRole('teach')} label={`I'll teach ${otherName.split(' ')[0]}`} />
-          </div>
+          {showLearn && showTeach ? (
+            <div style={{ display: 'flex', gap: 4, padding: 4, background: m.ink10, borderRadius: 9, width: 'fit-content', marginBottom: 14 }}>
+              <RoleOption m={m} active={role === 'learn'} onClick={() => setRole('learn')} label={`I'll learn from ${otherName.split(' ')[0]}`} />
+              <RoleOption m={m} active={role === 'teach'} onClick={() => setRole('teach')} label={`I'll teach ${otherName.split(' ')[0]}`} />
+            </div>
+          ) : (
+            <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 14, color: m.ink }}>
+              {role === 'learn'
+                ? `Learning from ${otherName.split(' ')[0]}`
+                : `Teaching ${otherName.split(' ')[0]}`}
+            </div>
+          )}
 
           {/* Skill name */}
           <FormLabel m={m}>What's being taught</FormLabel>
@@ -564,40 +631,113 @@ function LeftPane({ m, count }) {
 
 // ─── MIDDLE: candidates list ────────────────────────────────────
 
-function CandidatesList({ m, suggestions, selectedId, onSelect }) {
+const SORT_OPTIONS = [
+  { key: 'score', label: 'All matches' },
+  { key: 'learn', label: 'I want to learn' },
+  { key: 'teach', label: 'I can teach' },
+];
+
+function CandidatesList({ m, suggestions, totalCount, selectedId, sort, onSort, myOfferNames, myWantNames, onSelect }) {
+  const isFiltered = sort !== 'score' && suggestions.length !== totalCount;
   return (
     <div style={{ padding: '20px 28px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <h2 style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-          {suggestions.length} {suggestions.length === 1 ? 'match' : 'matches'}
+          {isFiltered ? (
+            <>
+              {suggestions.length}
+              <span style={{ fontSize: 13, fontFamily: m.mono, color: m.ink50, fontWeight: 400, marginLeft: 6 }}>
+                of {totalCount} matches
+              </span>
+            </>
+          ) : (
+            <>{totalCount} {totalCount === 1 ? 'match' : 'matches'}</>
+          )}
         </h2>
-        <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink50 }}>
-          ranked by total score
+        <div style={{ display: 'flex', gap: 4, padding: 3, background: m.ink10, borderRadius: 8 }}>
+          {SORT_OPTIONS.map((o) => (
+            <button
+              key={o.key}
+              type="button"
+              onClick={() => onSort(o.key)}
+              style={{
+                background: sort === o.key ? m.panel : 'transparent',
+                color: sort === o.key ? m.ink : m.ink50,
+                border: 'none',
+                padding: '5px 10px',
+                borderRadius: 6,
+                fontSize: 11.5,
+                fontFamily: m.mono,
+                cursor: 'pointer',
+                boxShadow: sort === o.key ? `0 1px 2px ${m.ink10}` : 'none',
+              }}
+            >
+              {o.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {suggestions.map((s) => (
-          <CandidateCard
-            key={s.matchId}
-            m={m}
-            suggestion={s}
-            isSelected={s.matchId === selectedId}
-            onClick={() => onSelect(s.matchId)}
-          />
-        ))}
-      </div>
+      {suggestions.length === 0 ? (
+        <div style={{
+          marginTop: 40, textAlign: 'center',
+          border: `1px dashed ${m.ink20}`, borderRadius: 10, padding: '32px 24px',
+        }}>
+          <div style={{ fontSize: 15, fontWeight: 500, color: m.ink, marginBottom: 8 }}>
+            No matches for this filter.
+          </div>
+          <div style={{ fontSize: 13, color: m.ink50, lineHeight: 1.5 }}>
+            {sort === 'teach'
+              ? 'None of your current matches want to learn what you offer. Try adding more skills on /skills.'
+              : 'None of your current matches offer what you want to learn. Try adding more wants on /skills.'}
+          </div>
+          <button
+            type="button"
+            onClick={() => onSort('score')}
+            style={{
+              marginTop: 16, background: 'transparent', border: `1px solid ${m.ink20}`,
+              color: m.ink, borderRadius: 6, padding: '7px 14px',
+              fontSize: 12, fontFamily: m.mono, cursor: 'pointer',
+            }}
+          >
+            Show all matches →
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {suggestions.map((s) => (
+            <CandidateCard
+              key={s.matchId}
+              m={m}
+              suggestion={s}
+              isSelected={s.matchId === selectedId}
+              myOfferNames={myOfferNames}
+              myWantNames={myWantNames}
+              onClick={() => onSelect(s.matchId)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function CandidateCard({ m, suggestion, isSelected, onClick }) {
+function CandidateCard({ m, suggestion, isSelected, myOfferNames, myWantNames, onClick }) {
   const name = suggestion.profile?.displayName || shortId(suggestion.userId);
   const initials = nameToInitials(name);
   const topScorer = suggestion.breakdown.details
     .slice()
     .sort((a, b) => b.weight * b.value - a.weight * a.value)[0];
   const matchPct = Math.round(suggestion.totalScore * 100);
+
+  // Skills the user would LEARN = candidate's offers that match my wants
+  const youLearn = (suggestion.theirOffers || []).filter((s) =>
+    myWantNames.has(s.name.toLowerCase()),
+  );
+  // Skills the user could TEACH = candidate's wants that match my offers
+  const youTeach = (suggestion.theirWants || []).filter((s) =>
+    myOfferNames.has(s.name.toLowerCase()),
+  );
 
   return (
     <button
@@ -636,28 +776,29 @@ function CandidateCard({ m, suggestion, isSelected, onClick }) {
       </div>
       <div>
         <div style={{ fontSize: 14.5, fontWeight: 500, marginBottom: 2 }}>{name}</div>
-        <div style={{ fontSize: 12, color: m.ink50, fontFamily: m.mono, marginBottom: 4 }}>
+        <div style={{ fontSize: 12, color: m.ink50, fontFamily: m.mono, marginBottom: 6 }}>
           {suggestion.profile?.location || '—'}
           {suggestion.profile?.rating != null && (
             <> · ★ {Number(suggestion.profile.rating).toFixed(1)}</>
           )}
         </div>
-        {/* Compact skill summary — comma-separated names so the card stays one row tall.
-            Falls back to nothing if matching-service couldn't reach skill-service
-            (circuit breaker returned an empty list — see SkillServiceClient.emptySkills). */}
-        {suggestion.theirOffers?.length > 0 && (
-          <div style={{ fontSize: 12, color: m.ink70, marginBottom: 2 }}>
-            <span style={{ color: m.accent, fontFamily: m.mono, fontSize: 11 }}>TEACHES </span>
-            {suggestion.theirOffers.map((s) => s.name).join(', ')}
+        {youLearn.length > 0 && (
+          <div style={{ fontSize: 12, marginBottom: 2 }}>
+            <span style={{ color: m.accent, fontFamily: m.mono, fontSize: 10.5 }}>YOU'D LEARN </span>
+            <span style={{ color: m.ink70 }}>{youLearn.map((s) => s.name).join(', ')}</span>
           </div>
         )}
-        {suggestion.theirWants?.length > 0 && (
-          <div style={{ fontSize: 12, color: m.ink70, marginBottom: 4 }}>
-            <span style={{ color: m.ink50, fontFamily: m.mono, fontSize: 11 }}>WANTS  </span>
-            {suggestion.theirWants.map((s) => s.name).join(', ')}
+        {youTeach.length > 0 && (
+          <div style={{ fontSize: 12, marginBottom: 4 }}>
+            <span style={{ color: m.ink50, fontFamily: m.mono, fontSize: 10.5 }}>YOU'D TEACH </span>
+            <span style={{ color: m.ink70 }}>{youTeach.map((s) => s.name).join(', ')}</span>
           </div>
         )}
-        <div style={{ fontSize: 12.5, color: m.ink70 }}>↳ {topScorer?.explanation}</div>
+        {youLearn.length === 0 && youTeach.length === 0 && (
+          <div style={{ fontSize: 12, color: m.ink50, marginBottom: 4, fontFamily: m.mono }}>
+            ↳ {topScorer?.explanation}
+          </div>
+        )}
       </div>
       <div style={{ textAlign: 'right' }}>
         <div style={{ fontFamily: m.mono, fontSize: 18, color: m.accent, fontWeight: 500 }}>
@@ -673,7 +814,7 @@ function CandidateCard({ m, suggestion, isSelected, onClick }) {
 
 // ─── RIGHT: selected detail ─────────────────────────────────────
 
-function SelectedDetail({ m, suggestion, acting, onAccept, onDecline }) {
+function SelectedDetail({ m, suggestion, myOfferNames, myWantNames, declining, onAccept, onDecline }) {
   const name = suggestion.profile?.displayName || shortId(suggestion.userId);
 
   return (
@@ -698,17 +839,27 @@ function SelectedDetail({ m, suggestion, acting, onAccept, onDecline }) {
       </Link>
       <div style={{ height: 18 }} />
 
-      {/* Skill summary — pills version, more readable than comma-list at this size.
-          Hidden entirely when both lists are empty so the layout doesn't show
-          a blank "What they bring" header. */}
+      {/* Skill exchange — shown from the logged-in user's perspective.
+          Pills that match the user's own skills are highlighted in accent. */}
       {(suggestion.theirOffers?.length > 0 || suggestion.theirWants?.length > 0) && (
         <>
-          <Eyebrow m={m}>What they bring</Eyebrow>
+          <Eyebrow m={m}>Skill exchange</Eyebrow>
           {suggestion.theirOffers?.length > 0 && (
-            <SkillPillRow m={m} label="Can teach" skills={suggestion.theirOffers} accent />
+            <SkillPillRow
+              m={m}
+              label="You'd learn"
+              skills={suggestion.theirOffers}
+              highlightNames={myWantNames}
+              accent
+            />
           )}
           {suggestion.theirWants?.length > 0 && (
-            <SkillPillRow m={m} label="Wants to learn" skills={suggestion.theirWants} />
+            <SkillPillRow
+              m={m}
+              label="You'd teach"
+              skills={suggestion.theirWants}
+              highlightNames={myOfferNames}
+            />
           )}
           <div style={{ height: 18 }} />
         </>
@@ -742,7 +893,6 @@ function SelectedDetail({ m, suggestion, acting, onAccept, onDecline }) {
         <button
           type="button"
           onClick={onAccept}
-          disabled={acting}
           style={{
             flex: 1,
             background: m.ink,
@@ -753,8 +903,7 @@ function SelectedDetail({ m, suggestion, acting, onAccept, onDecline }) {
             fontSize: 13.5,
             fontWeight: 500,
             fontFamily: m.font,
-            cursor: acting ? 'wait' : 'pointer',
-            opacity: acting ? 0.6 : 1,
+            cursor: 'pointer',
           }}
         >
           Accept & schedule →
@@ -762,7 +911,7 @@ function SelectedDetail({ m, suggestion, acting, onAccept, onDecline }) {
         <button
           type="button"
           onClick={onDecline}
-          disabled={acting}
+          disabled={declining}
           style={{
             background: 'transparent',
             color: m.ink,
@@ -771,8 +920,8 @@ function SelectedDetail({ m, suggestion, acting, onAccept, onDecline }) {
             borderRadius: 8,
             fontSize: 13.5,
             fontFamily: m.font,
-            cursor: acting ? 'wait' : 'pointer',
-            opacity: acting ? 0.6 : 1,
+            cursor: declining ? 'wait' : 'pointer',
+            opacity: declining ? 0.6 : 1,
           }}
         >
           Decline
@@ -813,30 +962,41 @@ function Bar({ m, value }) {
 // `accent` flag colours the pills with the brand colour to make "Can teach"
 // visually distinct from the more neutral "Wants to learn" — at a glance
 // the user can tell which side is the supply and which is the demand.
-function SkillPillRow({ m, label, skills, accent = false }) {
+function SkillPillRow({ m, label, skills, highlightNames = null, accent = false }) {
   return (
     <div style={{ marginBottom: 8 }}>
       <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, marginBottom: 4 }}>
         {label}
+        {highlightNames && (() => {
+          const n = skills.filter((s) => highlightNames.has(s.name.toLowerCase())).length;
+          return n > 0
+            ? <span style={{ marginLeft: 6, color: m.accent }}>· {n} match{n > 1 ? 'es' : ''} your skills</span>
+            : null;
+        })()}
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-        {skills.map((s, i) => (
-          <span
-            key={`${s.name}-${i}`}
-            title={s.tags?.length ? `tags: ${s.tags.join(', ')}` : undefined}
-            style={{
-              fontSize: 11.5,
-              fontFamily: m.mono,
-              padding: '3px 8px',
-              borderRadius: 999,
-              background: accent ? m.accentSoft : m.ink10,
-              color: accent ? m.accent : m.ink70,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {s.name}
-          </span>
-        ))}
+        {skills.map((s, i) => {
+          const isMatch = highlightNames?.has(s.name.toLowerCase());
+          return (
+            <span
+              key={`${s.name}-${i}`}
+              title={s.tags?.length ? `tags: ${s.tags.join(', ')}` : undefined}
+              style={{
+                fontSize: 11.5,
+                fontFamily: m.mono,
+                padding: '3px 8px',
+                borderRadius: 999,
+                background: isMatch ? m.accentSoft : accent ? m.accentSoft : m.ink10,
+                color: isMatch ? m.accent : accent ? m.accent : m.ink70,
+                whiteSpace: 'nowrap',
+                fontWeight: isMatch ? 600 : 'normal',
+                outline: isMatch ? `1.5px solid ${m.accent}` : 'none',
+              }}
+            >
+              {s.name}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

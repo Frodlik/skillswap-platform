@@ -23,11 +23,10 @@ import { formatWhen, durationLabel } from '../utils/format.js';
 //   CANCELLED → —
 
 const FILTERS = [
-  { key: 'all',       label: 'All',       statuses: null },
-  { key: 'pending',   label: 'Pending',   statuses: ['PROPOSED'] },
-  { key: 'upcoming',  label: 'Upcoming',  statuses: ['SCHEDULED', 'ACTIVE'] },
+  { key: 'upcoming',  label: 'Upcoming',  statuses: ['PROPOSED', 'SCHEDULED', 'ACTIVE'] },
   { key: 'completed', label: 'Completed', statuses: ['COMPLETED'] },
   { key: 'cancelled', label: 'Cancelled', statuses: ['CANCELLED', 'REJECTED'] },
+  { key: 'all',       label: 'All',       statuses: null },
 ];
 
 export default function Sessions() {
@@ -38,7 +37,7 @@ export default function Sessions() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('upcoming');
   const [reviewModal, setReviewModal] = useState(null); // session being reviewed
   const [reportModal, setReportModal] = useState(null); // session being reported
 
@@ -67,9 +66,11 @@ export default function Sessions() {
   }, [sessions, filter]);
 
   const counts = useMemo(() => {
-    const c = { all: sessions.length };
-    for (const f of FILTERS.slice(1)) {
-      c[f.key] = sessions.filter((s) => f.statuses.includes(s.status)).length;
+    const c = {};
+    for (const f of FILTERS) {
+      c[f.key] = f.statuses
+        ? sessions.filter((s) => f.statuses.includes(s.status)).length
+        : sessions.length;
     }
     return c;
   }, [sessions]);

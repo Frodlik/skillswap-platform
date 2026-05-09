@@ -16,9 +16,17 @@
     rel="stylesheet"
   />
   <style>
-    html, body { margin: 0; padding: 0; background: #fafaf7; font-family: 'IBM Plex Sans', -apple-system, sans-serif; }
+    html, body { margin: 0; padding: 0; font-family: 'IBM Plex Sans', -apple-system, sans-serif; }
     *, *::before, *::after { box-sizing: border-box; }
   </style>
+  <!-- Set body background before React renders to avoid flash of wrong theme -->
+  <script>
+    (function() {
+      var saved = localStorage.getItem('skillswap-theme');
+      var dark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.style.background = dark ? '#0d0d0c' : '#fafaf7';
+    })();
+  </script>
 </head>
 <body>
   <!--

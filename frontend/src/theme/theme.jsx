@@ -17,11 +17,18 @@ import { createContext, useContext, useMemo, useState } from 'react';
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
-  const [mode, setMode] = useState('light');     // 'light' | 'dark'
-  const [accent, setAccent] = useState('#7a3df7'); // electric violet from the design
+  const [mode, setModeState] = useState(() => {
+    const saved = localStorage.getItem('skillswap-theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+  const [accent, setAccent] = useState('#7a3df7');
 
-  // useMemo recomputes the colour palette only when mode/accent change,
-  // not on every parent re-render. Trivial perf win, also signals intent.
+  function setMode(next) {
+    localStorage.setItem('skillswap-theme', next);
+    setModeState(next);
+  }
+
   const m = useMemo(() => makeColors(mode, accent), [mode, accent]);
 
   return (

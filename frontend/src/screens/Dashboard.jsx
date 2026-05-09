@@ -57,11 +57,10 @@ export default function Dashboard() {
 
   const offers = data.skills.filter((s) => s.type === 'OFFER').length;
   const wants = data.skills.filter((s) => s.type === 'WANT').length;
-  const upcoming = data.sessions.filter((s) => s.status === 'SCHEDULED' || s.status === 'ACTIVE');
+  const upcoming = data.sessions.filter(
+    (s) => s.status === 'SCHEDULED' || s.status === 'ACTIVE' || s.status === 'PROPOSED'
+  );
   const completed = data.sessions.filter((s) => s.status === 'COMPLETED').length;
-  // PROPOSED sessions where I'm NOT the proposer = pending action items —
-  // surface them on the dashboard so the user notices invitations even if
-  // they don't open /sessions directly.
   const pendingForMe = data.sessions.filter(
     (s) => s.status === 'PROPOSED' && s.proposerId !== userId
   ).length;
@@ -232,6 +231,18 @@ function Panel({ m, title, linkTo, linkLabel, children }) {
 
 function UpcomingRow({ m, session, userId }) {
   const isTeacher = session.teacherId === userId;
+  const isProposed = session.status === 'PROPOSED';
+  const isMyInvite = isProposed && session.proposerId === userId;
+  const isIncoming = isProposed && session.proposerId !== userId;
+
+  const badge = isIncoming
+    ? { bg: '#fff5d8', color: '#8a6d00', label: '⚠ RESPOND' }
+    : isMyInvite
+    ? { bg: m.ink10, color: m.ink50, label: 'PENDING' }
+    : session.status === 'ACTIVE'
+    ? { bg: m.accent, color: '#fff', label: '● LIVE' }
+    : { bg: m.ink, color: m.bg, label: 'UPCOMING' };
+
   return (
     <div
       style={{
@@ -239,8 +250,8 @@ function UpcomingRow({ m, session, userId }) {
         gridTemplateColumns: '1fr auto',
         alignItems: 'center',
         padding: '10px 12px',
-        background: m.bg,
-        border: `1px solid ${m.ink10}`,
+        background: isIncoming ? '#fffdf0' : m.bg,
+        border: `1px solid ${isIncoming ? '#e8d87a' : m.ink10}`,
         borderRadius: 8,
       }}
     >
@@ -252,7 +263,7 @@ function UpcomingRow({ m, session, userId }) {
           </span>
         </div>
         <div style={{ fontSize: 11.5, color: m.ink50, fontFamily: m.mono }}>
-          {formatWhen(session.scheduledAt)} · {session.durationTokens}h
+          {isProposed ? 'proposed · ' : ''}{formatWhen(session.scheduledAt)} · {session.durationTokens}h
         </div>
       </div>
       <span
@@ -261,12 +272,12 @@ function UpcomingRow({ m, session, userId }) {
           fontFamily: m.mono,
           padding: '3px 8px',
           borderRadius: 4,
-          background: session.status === 'ACTIVE' ? m.accent : m.ink10,
-          color: session.status === 'ACTIVE' ? '#fff' : m.ink,
+          background: badge.bg,
+          color: badge.color,
           letterSpacing: '0.06em',
         }}
       >
-        {session.status}
+        {badge.label}
       </span>
     </div>
   );

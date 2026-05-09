@@ -49,3 +49,9 @@ export async function getProfiles(userIds) {
   const settled = await Promise.allSettled(userIds.map((id) => getProfile(id)));
   return settled.map((r) => (r.status === 'fulfilled' ? r.value : null));
 }
+
+// Case-insensitive partial name search — returns up to 20 matching profiles.
+export async function searchByName(name) {
+  const res = await client.get('/users/search', { params: { name } });
+  return res.data;
+}
