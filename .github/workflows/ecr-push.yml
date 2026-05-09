@@ -1,0 +1,82 @@
+name: Build & Push to ECR
+
+# Runs on every push to main that touches any service or this workflow.
+# Uses GitHub OIDC — no AWS Access Keys stored anywhere.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api-gateway/**'
+      - 'auth-service/**'
+      - 'matching-service/**'
+      - 'moderation-service/**'
+      - 'notification-service/**'
+      - 'session-service/**'
+      - 'skill-service/**'
+      - 'user-service/**'
+      - 'Dockerfile'
+      - 'pom.xml'
+      - '.github/workflows/ecr-push.yml'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to build (leave empty for all)'
+        required: false
+
+permissions:
+  id-token: write   # required for OIDC
+  contents: read
+
+env:
+  AWS_REGION: eu-north-1
+  ECR_REGISTRY: 695875594472.dkr.ecr.eu-north-1.amazonaws.com
+
+jobs:
+  build-push:
+    name: ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - matching-service
+          - moderation-service
+          - notification-service
+          - session-service
+          - skill-service
+          - user-service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC — no keys needed)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: tag
+        run: echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build & push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          build-args: SERVICE=${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/skillswap/${{ matrix.service }}:${{ steps.tag.outputs.tag }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
