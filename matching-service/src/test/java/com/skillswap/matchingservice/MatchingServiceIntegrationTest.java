@@ -109,11 +109,11 @@ class MatchingServiceIntegrationTest {
 
         matchRepository.save(Match.builder().id(UUID.randomUUID())
                 .userAId(userId).userBId(candidate1).totalScore(0.85)
-                .scoreBreakdown("{\"details\":[]}").status(MatchStatus.PENDING)
+                .scoreBreakdown("{\"details\":[{\"name\":\"skill-match\",\"weight\":0.4,\"value\":0.8,\"explanation\":\"overlap\"}]}").status(MatchStatus.PENDING)
                 .expiresAt(Instant.now().plus(7, ChronoUnit.DAYS)).build());
         matchRepository.save(Match.builder().id(UUID.randomUUID())
                 .userAId(userId).userBId(candidate2).totalScore(0.65)
-                .scoreBreakdown("{\"details\":[]}").status(MatchStatus.PENDING)
+                .scoreBreakdown("{\"details\":[{\"name\":\"skill-match\",\"weight\":0.4,\"value\":0.8,\"explanation\":\"overlap\"}]}").status(MatchStatus.PENDING)
                 .expiresAt(Instant.now().plus(7, ChronoUnit.DAYS)).build());
 
         ResponseEntity<MatchSuggestion[]> response = client.get()
@@ -135,7 +135,7 @@ class MatchingServiceIntegrationTest {
 
         matchRepository.save(Match.builder().id(matchId)
                 .userAId(userId).userBId(candidateId).totalScore(0.75)
-                .scoreBreakdown("{\"details\":[]}").status(MatchStatus.PENDING)
+                .scoreBreakdown("{\"details\":[{\"name\":\"skill-match\",\"weight\":0.4,\"value\":0.8,\"explanation\":\"overlap\"}]}").status(MatchStatus.PENDING)
                 .expiresAt(Instant.now().plus(7, ChronoUnit.DAYS)).build());
 
         ResponseEntity<Object> response = client.post()
