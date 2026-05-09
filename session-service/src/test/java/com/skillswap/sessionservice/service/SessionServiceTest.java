@@ -58,7 +58,7 @@ class SessionServiceTest {
     @Test
     void createSession_holdsTokensAndPersistsScheduledSession() {
         CreateSessionRequest req = new CreateSessionRequest(
-                matchId, teacherId, learnerId, "Java", Instant.now().plusSeconds(3600), 2);
+                matchId, teacherId, learnerId, teacherId, "Java", Instant.now().plusSeconds(3600), 2);
         when(sessionRepo.save(any(Session.class))).thenAnswer(inv -> inv.getArgument(0));
 
         SessionResponse resp = service.createSession(req);

@@ -74,6 +74,15 @@ public class ProfileService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<ProfileResponse> searchByDisplayName(String name) {
+        if (name == null || name.isBlank()) return List.of();
+        return profileRepository.findTop20ByDisplayNameContainingIgnoreCase(name.trim())
+                .stream()
+                .map(this::toProfileResponse)
+                .toList();
+    }
+
     @Transactional
     public PreferenceResponse updatePreferences(UUID userId, PreferenceUpdateRequest request) {
         UserPreference prefs = userPreferenceRepository.findByUserId(userId)

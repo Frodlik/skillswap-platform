@@ -4,6 +4,6 @@ import java.util.UUID;
 
 public class UserBannedException extends RuntimeException {
     public UserBannedException(UUID userId) {
-        super("Account " + userId + " is currently suspended");
+        super("Your account is currently suspended.");
     }
 }

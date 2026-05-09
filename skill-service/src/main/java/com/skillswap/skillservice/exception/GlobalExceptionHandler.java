@@ -20,6 +20,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     ErrorResponse handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
+        log.debug("{} [{}]: {}", ex.getClass().getSimpleName(), req.getRequestURI(), ex.getMessage());
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));

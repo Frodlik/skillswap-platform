@@ -18,4 +18,6 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID> {
     @Query("SELECT p FROM Profile p WHERE (:language IS NULL OR p.language = :language) " +
            "AND (:timezone IS NULL OR p.timezone = :timezone)")
     List<Profile> search(@Param("language") String language, @Param("timezone") String timezone);
+
+    List<Profile> findTop20ByDisplayNameContainingIgnoreCase(String displayName);
 }

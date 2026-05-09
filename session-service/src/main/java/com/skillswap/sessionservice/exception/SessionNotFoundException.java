@@ -3,5 +3,5 @@ package com.skillswap.sessionservice.exception;
 import java.util.UUID;
 
 public class SessionNotFoundException extends RuntimeException {
-    public SessionNotFoundException(UUID id) { super("Session not found: " + id); }
+    public SessionNotFoundException(UUID id) { super("Session not found."); }
 }

@@ -43,7 +43,11 @@ public class UserController {
 
     @GetMapping("/search")
     List<ProfileResponse> search(@RequestParam(required = false) String language,
-                                 @RequestParam(required = false) String timezone) {
+                                 @RequestParam(required = false) String timezone,
+                                 @RequestParam(required = false) String name) {
+        if (name != null && !name.isBlank()) {
+            return profileService.searchByDisplayName(name);
+        }
         return profileService.searchProfiles(language, timezone);
     }
 
