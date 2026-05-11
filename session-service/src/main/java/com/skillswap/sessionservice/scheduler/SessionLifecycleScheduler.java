@@ -47,7 +47,11 @@ public class SessionLifecycleScheduler {
                 .findByStatusAndScheduledAtLessThanEqual(SessionStatus.PROPOSED, now);
         for (Session s : stale) {
             try {
-                sessionService.changeStatus(s.getId(), SessionStatus.CANCELLED);
+                // The teacher-only check inside changeStatus only fires for
+                // ACTIVE → CANCELLED; PROPOSED → CANCELLED ignores actorId,
+                // so the value here doesn't gate anything. We pass teacherId
+                // as a stable "system-acting-as-teacher" identity for logs.
+                sessionService.changeStatus(s.getId(), SessionStatus.CANCELLED, s.getTeacherId());
                 publisher.publishSessionDeclined(s, true);
                 log.info("Auto-cancelled stale PROPOSED session={} (scheduledAt={} now={})",
                         s.getId(), s.getScheduledAt(), now);
@@ -61,7 +65,7 @@ public class SessionLifecycleScheduler {
         List<Session> due = sessionRepo
                 .findByStatusAndScheduledAtLessThanEqual(SessionStatus.SCHEDULED, now);
         for (Session s : due) {
-            transition(s.getId(), SessionStatus.ACTIVE);
+            transition(s, SessionStatus.ACTIVE);
         }
     }
 
@@ -70,16 +74,16 @@ public class SessionLifecycleScheduler {
         for (Session s : active) {
             Instant endsAt = s.getScheduledAt().plus(TOKEN_DURATION.multipliedBy(s.getDurationTokens()));
             if (!endsAt.isAfter(now)) {
-                transition(s.getId(), SessionStatus.COMPLETED);
+                transition(s, SessionStatus.COMPLETED);
             }
         }
     }
 
-    private void transition(UUID id, SessionStatus to) {
+    private void transition(Session s, SessionStatus to) {
         try {
-            sessionService.changeStatus(id, to);
+            sessionService.changeStatus(s.getId(), to, s.getTeacherId());
         } catch (RuntimeException e) {
-            log.warn("Auto-transition session={} -> {} failed: {}", id, to, e.getMessage());
+            log.warn("Auto-transition session={} -> {} failed: {}", s.getId(), to, e.getMessage());
         }
     }
 }

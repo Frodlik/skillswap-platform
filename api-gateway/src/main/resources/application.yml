@@ -6,6 +6,11 @@ spring:
     loadbalancer:
       cache:
         ttl: 30s  # keep Eureka instance list warm; 5s caused first-request failures after idle
+      retry:
+        enabled: true
+        retry-on-all-operations: true   # retry GET *and* POST when no instance is yet known
+        max-retries-on-same-service-instance: 0
+        max-retries-on-next-service-instance: 2
   application:
     name: api-gateway
   threads:
@@ -43,8 +48,14 @@ eureka:
   client:
     service-url:
       defaultZone: http://eureka:eureka@${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
+    # Default registry-fetch is 30s — on cold start the gateway can wait that
+    # long before seeing a freshly-registered service, which produced
+    # "service unavailable" on the very first request. Backend services already
+    # set this to 5s; the gateway was missing the same tuning.
+    registry-fetch-interval-seconds: 5
   instance:
     prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 5
 
 management:
   endpoints:

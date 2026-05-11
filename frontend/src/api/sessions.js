@@ -27,8 +27,12 @@ export async function getUserSessions(userId, page = 0, size = 50) {
   return res.data;          // Spring Page<SessionResponse>
 }
 
-export async function updateSessionStatus(sessionId, status) {
-  const res = await client.patch(`/sessions/${sessionId}/status`, { status });
+// actorId — the logged-in user clicking the button. Required by the backend
+// because some transitions (currently ACTIVE → CANCELLED, teacher-only)
+// reject requests from the wrong participant. For unrestricted transitions
+// the field is still validated (@NotNull) but its value is not checked.
+export async function updateSessionStatus(sessionId, status, actorId) {
+  const res = await client.patch(`/sessions/${sessionId}/status`, { status, actorId });
   return res.data;
 }
 

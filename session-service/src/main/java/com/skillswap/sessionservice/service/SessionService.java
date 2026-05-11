@@ -172,12 +172,21 @@ public class SessionService {
     }
 
     @Transactional
-    public SessionResponse changeStatus(UUID id, SessionStatus to) {
+    public SessionResponse changeStatus(UUID id, SessionStatus to, UUID actorId) {
         Session session = sessionRepo.findById(id)
                 .orElseThrow(() -> new SessionNotFoundException(id));
         validateTransition(session.getStatus(), to);
 
         SessionStatus from = session.getStatus();
+        // Once the lesson is ACTIVE the teacher has already started investing
+        // time. A learner cancelling at minute 50 of a one-hour session would
+        // get the HOLD released and the teacher would walk away with nothing —
+        // so only the teacher can abort an in-progress session.
+        if (from == SessionStatus.ACTIVE && to == SessionStatus.CANCELLED
+                && !actorId.equals(session.getTeacherId())) {
+            throw new IllegalArgumentException(
+                    "Only the teacher can cancel a session that is already ACTIVE");
+        }
         session.setStatus(to);
 
         switch (to) {

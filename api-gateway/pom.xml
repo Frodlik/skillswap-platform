@@ -27,6 +27,14 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
+        <!-- spring-retry is required by spring.cloud.loadbalancer.retry.* —
+             without it, retry config is silently ignored. Covers the
+             cold-start gap where a service has registered with Eureka
+             but the gateway hasn't fetched the registry yet. -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>

@@ -77,7 +77,7 @@ export default function Sessions() {
 
   async function handleStatusChange(sessionId, newStatus) {
     try {
-      const updated = await sessionsApi.updateSessionStatus(sessionId, newStatus);
+      const updated = await sessionsApi.updateSessionStatus(sessionId, newStatus, userId);
       setSessions((prev) => prev.map((s) => (s.id === sessionId ? updated : s)));
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -349,6 +349,14 @@ function SessionRow({ m, session, userId, isLast, onJoin, onAccept, onDecline, o
         {session.status === 'ACTIVE' && (
           <button type="button" onClick={onComplete} style={btnSecondary(m)}>
             Complete
+          </button>
+        )}
+        {/* Only the teacher can abort an in-progress lesson — backend rejects
+            ACTIVE → CANCELLED from anyone else, so we hide the button for
+            learners to keep the affordance honest. */}
+        {session.status === 'ACTIVE' && isTeacher && (
+          <button type="button" onClick={onCancel} style={btnSecondary(m)}>
+            Cancel
           </button>
         )}
         {session.status === 'COMPLETED' && (

@@ -73,7 +73,7 @@ public class SessionController {
     @PatchMapping("/{sessionId}/status")
     SessionResponse updateStatus(@PathVariable UUID sessionId,
                                  @Valid @RequestBody UpdateStatusRequest req) {
-        return sessionService.changeStatus(sessionId, req.status());
+        return sessionService.changeStatus(sessionId, req.status(), req.actorId());
     }
 
     // Consent flow: invitee accepts or declines a PROPOSED session.

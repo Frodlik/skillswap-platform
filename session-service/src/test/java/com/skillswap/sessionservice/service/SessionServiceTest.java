@@ -77,7 +77,7 @@ class SessionServiceTest {
         when(sessionRepo.findById(sessionId)).thenReturn(Optional.of(s));
         when(sessionRepo.save(any(Session.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        service.changeStatus(sessionId, SessionStatus.ACTIVE);
+        service.changeStatus(sessionId, SessionStatus.ACTIVE, teacherId);
 
         assertThat(s.getStatus()).isEqualTo(SessionStatus.ACTIVE);
         verifyNoInteractions(walletService);
@@ -91,7 +91,7 @@ class SessionServiceTest {
         when(sessionRepo.save(any(Session.class))).thenAnswer(inv -> inv.getArgument(0));
         when(reviewRepo.findBySessionId(sessionId)).thenReturn(List.of());
 
-        service.changeStatus(sessionId, SessionStatus.COMPLETED);
+        service.changeStatus(sessionId, SessionStatus.COMPLETED, teacherId);
 
         assertThat(s.getStatus()).isEqualTo(SessionStatus.COMPLETED);
         assertThat(s.getCompletedAt()).isNotNull();
@@ -106,21 +106,33 @@ class SessionServiceTest {
         when(sessionRepo.findById(sessionId)).thenReturn(Optional.of(s));
         when(sessionRepo.save(any(Session.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        service.changeStatus(sessionId, SessionStatus.CANCELLED);
+        service.changeStatus(sessionId, SessionStatus.CANCELLED, learnerId);
 
         verify(walletService).release(learnerId, 2, sessionId);
         verifyNoInteractions(publisher);
     }
 
     @Test
-    void changeStatus_activeToCancelled_releasesHeldTokens() {
+    void changeStatus_activeToCancelledByTeacher_releasesHeldTokens() {
         Session s = sessionFixture(SessionStatus.ACTIVE);
         when(sessionRepo.findById(sessionId)).thenReturn(Optional.of(s));
         when(sessionRepo.save(any(Session.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        service.changeStatus(sessionId, SessionStatus.CANCELLED);
+        service.changeStatus(sessionId, SessionStatus.CANCELLED, teacherId);
 
         verify(walletService).release(learnerId, 2, sessionId);
+    }
+
+    @Test
+    void changeStatus_activeToCancelledByLearner_isRejected() {
+        Session s = sessionFixture(SessionStatus.ACTIVE);
+        when(sessionRepo.findById(sessionId)).thenReturn(Optional.of(s));
+
+        assertThatThrownBy(() -> service.changeStatus(sessionId, SessionStatus.CANCELLED, learnerId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("teacher");
+        verify(sessionRepo, times(0)).save(any());
+        verifyNoInteractions(walletService);
     }
 
     @Test
@@ -128,7 +140,7 @@ class SessionServiceTest {
         Session s = sessionFixture(SessionStatus.COMPLETED);
         when(sessionRepo.findById(sessionId)).thenReturn(Optional.of(s));
 
-        assertThatThrownBy(() -> service.changeStatus(sessionId, SessionStatus.ACTIVE))
+        assertThatThrownBy(() -> service.changeStatus(sessionId, SessionStatus.ACTIVE, teacherId))
                 .isInstanceOf(IllegalStateException.class);
         verify(sessionRepo, times(0)).save(any());
     }
@@ -138,7 +150,7 @@ class SessionServiceTest {
         Session s = sessionFixture(SessionStatus.SCHEDULED);
         when(sessionRepo.findById(sessionId)).thenReturn(Optional.of(s));
 
-        assertThatThrownBy(() -> service.changeStatus(sessionId, SessionStatus.COMPLETED))
+        assertThatThrownBy(() -> service.changeStatus(sessionId, SessionStatus.COMPLETED, teacherId))
                 .isInstanceOf(IllegalStateException.class);
         verifyNoInteractions(walletService);
     }
@@ -147,7 +159,7 @@ class SessionServiceTest {
     void changeStatus_throwsSessionNotFoundForUnknownId() {
         when(sessionRepo.findById(sessionId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.changeStatus(sessionId, SessionStatus.ACTIVE))
+        assertThatThrownBy(() -> service.changeStatus(sessionId, SessionStatus.ACTIVE, teacherId))
                 .isInstanceOf(SessionNotFoundException.class);
     }
 
@@ -161,7 +173,7 @@ class SessionServiceTest {
                 reviewFor(teacherId, 3),
                 reviewFor(learnerId, 4)));
 
-        service.changeStatus(sessionId, SessionStatus.COMPLETED);
+        service.changeStatus(sessionId, SessionStatus.COMPLETED, teacherId);
 
         verify(publisher).publishSessionCompleted(sessionId, teacherId, learnerId, 4, 4);
     }
@@ -174,7 +186,7 @@ class SessionServiceTest {
         when(reviewRepo.findBySessionId(sessionId)).thenReturn(List.of(
                 reviewFor(teacherId, 5)));
 
-        service.changeStatus(sessionId, SessionStatus.COMPLETED);
+        service.changeStatus(sessionId, SessionStatus.COMPLETED, teacherId);
 
         verify(publisher).publishSessionCompleted(
                 eq(sessionId), eq(teacherId), eq(learnerId),
