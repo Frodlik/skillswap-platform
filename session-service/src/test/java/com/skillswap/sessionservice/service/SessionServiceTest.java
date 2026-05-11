@@ -56,7 +56,7 @@ class SessionServiceTest {
     }
 
     @Test
-    void createSession_holdsTokensAndPersistsScheduledSession() {
+    void createSession_holdsTokensAndPersistsProposedSession() {
         CreateSessionRequest req = new CreateSessionRequest(
                 matchId, teacherId, learnerId, teacherId, "Java", Instant.now().plusSeconds(3600), 2);
         when(sessionRepo.save(any(Session.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -66,8 +66,9 @@ class SessionServiceTest {
         verify(walletService).hold(eq(learnerId), eq(2), any(UUID.class));
         ArgumentCaptor<Session> cap = ArgumentCaptor.forClass(Session.class);
         verify(sessionRepo).save(cap.capture());
-        assertThat(cap.getValue().getStatus()).isEqualTo(SessionStatus.SCHEDULED);
-        assertThat(resp.status()).isEqualTo(SessionStatus.SCHEDULED);
+        assertThat(cap.getValue().getStatus()).isEqualTo(SessionStatus.PROPOSED);
+        assertThat(resp.status()).isEqualTo(SessionStatus.PROPOSED);
+        verify(publisher).publishSessionProposed(any(Session.class));
     }
 
     @Test
