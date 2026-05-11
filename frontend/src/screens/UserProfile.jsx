@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/theme.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import * as usersApi from '../api/users.js';
@@ -19,6 +20,7 @@ import * as sessionsApi from '../api/sessions.js';
 export default function UserProfile() {
   const { userId } = useParams();
   const { m } = useTheme();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -68,13 +70,13 @@ export default function UserProfile() {
     return () => { cancelled = true; };
   }, [userId]);
 
-  if (loading) return <Centered m={m} title="Loading profile…" />;
+  if (loading) return <Centered m={m} title={t('userProfile.loading')} />;
   if (error || !profile) {
     return (
       <Centered
         m={m}
-        title="Profile not found"
-        subtitle={error || `No profile exists for userId ${userId}`}
+        title={t('userProfile.notFound')}
+        subtitle={error || t('userProfile.notFoundBody', { id: userId })}
       />
     );
   }
@@ -99,19 +101,18 @@ export default function UserProfile() {
             {profile.language && (
               <>
                 <span style={{ color: m.ink20 }}> · </span>
-                <span>speaks {profile.language}</span>
+                <span>{t('userProfile.speaks', { lang: profile.language })}</span>
               </>
             )}
           </div>
           {memberSince && (
             <div style={{ fontSize: 12, color: m.ink50, fontFamily: m.mono, marginTop: 4 }}>
-              member since {memberSince.toLocaleDateString(undefined, { year: 'numeric', month: 'short' })}
+              {t('userProfile.memberSince', { date: memberSince.toLocaleDateString(i18n.language, { year: 'numeric', month: 'short' }) })}
             </div>
           )}
         </div>
-        {/* Rating badge — top-right, lifted up so it visually pairs with the avatar */}
         {profile.rating != null && (
-          <RatingBadge m={m} rating={Number(profile.rating)} />
+          <RatingBadge m={m} t={t} rating={Number(profile.rating)} />
         )}
       </div>
 
@@ -133,28 +134,27 @@ export default function UserProfile() {
         </div>
       )}
 
-      {/* Three-up stat row: completed sessions, offered skills, wanted skills */}
+      {/* Three-up stat row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 22 }}>
         <StatCard m={m}
-          label="Sessions"
+          label={t('userProfile.stat.sessions')}
           value={sessionsCount ?? '—'}
-          hint="all-time, any role" />
+          hint={t('userProfile.stat.sessionsHint')} />
         <StatCard m={m}
-          label="Can teach"
+          label={t('userProfile.stat.canTeach')}
           value={offers.length}
-          hint={offers.length === 1 ? 'one offered skill' : 'offered skills'} />
+          hint={t('userProfile.stat.offered', { count: offers.length })} />
         <StatCard m={m}
-          label="Wants to learn"
+          label={t('userProfile.stat.wantsToLearn')}
           value={wants.length}
-          hint={wants.length === 1 ? 'one wanted skill' : 'wanted skills'} />
+          hint={t('userProfile.stat.wanted', { count: wants.length })} />
       </div>
 
-      {/* Skills sections */}
       {offers.length > 0 && (
-        <SkillsSection m={m} title="Can teach" skills={offers} accent />
+        <SkillsSection m={m} title={t('userProfile.sectionCanTeach')} skills={offers} accent />
       )}
       {wants.length > 0 && (
-        <SkillsSection m={m} title="Wants to learn" skills={wants} />
+        <SkillsSection m={m} title={t('userProfile.sectionWants')} skills={wants} />
       )}
       {offers.length === 0 && wants.length === 0 && (
         <div
@@ -167,7 +167,7 @@ export default function UserProfile() {
             fontSize: 13.5,
           }}
         >
-          This member hasn't listed any skills yet.
+          {t('userProfile.noSkills')}
         </div>
       )}
     </div>
@@ -202,7 +202,7 @@ function Avatar({ m, name }) {
   );
 }
 
-function RatingBadge({ m, rating }) {
+function RatingBadge({ m, t, rating }) {
   return (
     <div
       style={{
@@ -218,7 +218,7 @@ function RatingBadge({ m, rating }) {
         ★ {rating.toFixed(1)}
       </div>
       <div style={{ fontSize: 10, fontFamily: m.mono, color: m.accent, opacity: 0.7, marginTop: 2 }}>
-        rating
+        {t('userProfile.rating')}
       </div>
     </div>
   );
@@ -274,10 +274,10 @@ function SkillRow({ m, skill, accent }) {
           {skill.tags?.length > 0 && (
             <>
               <span style={{ color: m.ink20 }}> · </span>
-              {skill.tags.map((t, i) => (
-                <span key={t}>
+              {skill.tags.map((tag, i) => (
+                <span key={tag}>
                   {i > 0 && ', '}
-                  {t}
+                  {tag}
                 </span>
               ))}
             </>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/theme.jsx';
 import * as usersApi from '../../api/users.js';
 
@@ -7,6 +8,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export default function ModUsers() {
   const { m } = useTheme();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [query, setQuery] = useState('');
@@ -41,24 +43,24 @@ export default function ModUsers() {
       try {
         const list = await usersApi.searchByName(q);
         setResults(list);
-        if (list.length === 0) setError('No users found.');
+        if (list.length === 0) setError(t('mod.users.noResults'));
       } catch {
-        setError('Search failed. Try again.');
+        setError(t('mod.users.searchFailed'));
       } finally {
         setSearching(false);
       }
     }, 280);
 
     return () => clearTimeout(debounceRef.current);
-  }, [query, navigate]);
+  }, [query, navigate, t]);
 
   return (
     <div style={{ padding: '40px', maxWidth: 600 }}>
       <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
-        Trust & Safety
+        {t('mod.users.eyebrow')}
       </div>
       <h1 style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.025em', margin: '0 0 24px' }}>
-        User lookup
+        {t('mod.users.title')}
       </h1>
 
       <div style={{ position: 'relative' }}>
@@ -66,7 +68,7 @@ export default function ModUsers() {
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Name or paste UUID…"
+          placeholder={t('mod.users.searchPlaceholder')}
           style={{
             width: '100%',
             padding: '11px 14px',
@@ -85,13 +87,13 @@ export default function ModUsers() {
             position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
             fontSize: 11, fontFamily: m.mono, color: m.ink50,
           }}>
-            searching…
+            {t('mod.users.searching')}
           </span>
         )}
       </div>
 
       <div style={{ marginTop: 6, fontSize: 12, color: m.ink50, fontFamily: m.mono }}>
-        Type at least 2 characters to search by display name, or paste a user UUID to jump directly.
+        {t('mod.users.hint')}
       </div>
 
       {/* Results */}

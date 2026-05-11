@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/theme.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import * as usersApi from '../api/users.js';
@@ -88,6 +89,7 @@ function serializeSchedule(sel) {
 
 export default function Profile() {
   const { m } = useTheme();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.sub;
 
@@ -174,68 +176,64 @@ export default function Profile() {
     }
   }
 
-  if (loading) return <Centered m={m} title="Loading profile…" />;
-  if (error && !profile) return <Centered m={m} title="Couldn't load profile" subtitle={error} />;
+  if (loading) return <Centered m={m} title={t('profile.loading')} />;
+  if (error && !profile) return <Centered m={m} title={t('profile.loadError')} subtitle={error} />;
 
   return (
     <div style={{ padding: '24px 40px', maxWidth: 960, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 18 }}>
         <div>
-          <h2 style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>Edit profile</h2>
-          <div style={{ fontSize: 13, color: m.ink50, marginTop: 2 }}>Public — visible to anyone browsing skills.</div>
+          <h2 style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>{t('profile.title')}</h2>
+          <div style={{ fontSize: 13, color: m.ink50, marginTop: 2 }}>{t('profile.subtitle')}</div>
         </div>
-        <RatingBadge m={m} rating={profile?.rating} />
+        <RatingBadge m={m} t={t} rating={profile?.rating} />
       </div>
 
       {error && <ErrorBanner m={m} message={error} />}
-      {saved && <SuccessBanner m={m} message="Profile saved" />}
+      {saved && <SuccessBanner m={m} message={t('profile.savedBanner')} />}
 
       <form onSubmit={handleSave}>
 
-        {/* ─── Identity ─────────────────────────────────────────── */}
-        <Section m={m} title="Identity">
+        <Section m={m} title={t('profile.section.identity')}>
           <Row>
-            <Field m={m} label="Display name">
-              <Input m={m} value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Quinn Lee" />
+            <Field m={m} label={t('profile.field.displayName')}>
+              <Input m={m} value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t('profile.field.displayNamePlaceholder')} />
             </Field>
-            <Field m={m} label="Location">
-              <Input m={m} value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Kyiv, Ukraine" />
+            <Field m={m} label={t('profile.field.location')}>
+              <Input m={m} value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t('profile.field.locationPlaceholder')} />
             </Field>
           </Row>
-          <Field m={m} label="Bio" hint="280 chars max">
+          <Field m={m} label={t('profile.field.bio')} hint={t('profile.field.bioHint')}>
             <Textarea m={m} value={bio} onChange={(e) => setBio(e.target.value)} maxLength={280}
-              placeholder="A few sentences about you and what you're working on." />
+              placeholder={t('profile.field.bioPlaceholder')} />
           </Field>
         </Section>
 
-        {/* ─── Locale ───────────────────────────────────────────── */}
-        <Section m={m} title="Locale (used by the matcher)">
+        <Section m={m} title={t('profile.section.locale')}>
           <Row>
-            <Field m={m} label="Primary language">
-              <LanguageSelect m={m} value={language} onChange={setLanguage} />
+            <Field m={m} label={t('profile.field.primaryLanguage')}>
+              <LanguageSelect m={m} t={t} value={language} onChange={setLanguage} />
             </Field>
-            <Field m={m} label="Timezone">
-              <TimezoneSelect m={m} value={timezone} onChange={setTimezone} />
+            <Field m={m} label={t('profile.field.timezone')}>
+              <TimezoneSelect m={m} t={t} value={timezone} onChange={setTimezone} />
             </Field>
           </Row>
         </Section>
 
-        {/* ─── Preferences ──────────────────────────────────────── */}
-        <Section m={m} title="Matching preferences">
-          <Field m={m} label="Other languages you speak">
-            <LanguageMultiSelect m={m} value={preferredLanguages} onChange={setPreferredLanguages} />
+        <Section m={m} title={t('profile.section.preferences')}>
+          <Field m={m} label={t('profile.field.otherLanguages')}>
+            <LanguageMultiSelect m={m} t={t} value={preferredLanguages} onChange={setPreferredLanguages} />
           </Field>
-          <Field m={m} label="Preferred timezone range" hint="Whom you're comfortable scheduling with">
-            <TimezoneRangeSelect m={m} value={preferredTimezoneRange} onChange={setPreferredTimezoneRange} />
+          <Field m={m} label={t('profile.field.preferredTzRange')} hint={t('profile.field.preferredTzRangeHint')}>
+            <TimezoneRangeSelect m={m} t={t} value={preferredTimezoneRange} onChange={setPreferredTimezoneRange} />
           </Field>
         </Section>
 
-        {/* ─── Availability ─────────────────────────────────────── */}
-        <Section m={m} title="Weekly availability">
+        <Section m={m} title={t('profile.section.availability')}>
           <div style={{ fontSize: 12, color: m.ink50, marginBottom: 12, lineHeight: 1.5 }}>
-            Click or drag to mark hours when you're generally free. The matching algorithm uses this to find overlapping schedules.
+            {t('profile.availabilityHint')}
           </div>
-          <AvailabilityGrid m={m} selected={scheduleSelected} onChange={setScheduleSelected} />
+          <AvailabilityGrid m={m} t={t} selected={scheduleSelected} onChange={setScheduleSelected} />
         </Section>
 
         <div style={{ marginTop: 24 }}>
@@ -248,7 +246,7 @@ export default function Profile() {
               cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.6 : 1,
             }}
           >
-            {saving ? 'Saving…' : 'Save changes'}
+            {saving ? t('profile.saving') : t('profile.save')}
           </button>
         </div>
       </form>
@@ -258,7 +256,7 @@ export default function Profile() {
 
 // ─── LanguageSelect ──────────────────────────────────────────────
 
-function LanguageSelect({ m, value, onChange }) {
+function LanguageSelect({ m, t, value, onChange }) {
   const [open, setOpen]   = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef(null);
@@ -277,12 +275,12 @@ function LanguageSelect({ m, value, onChange }) {
         onClick={() => { setOpen((o) => !o); setSearch(''); }}
         style={selectBtnStyle(m)}
       >
-        <span>{selected ? `${selected.name} (${selected.code})` : value || 'Select language'}</span>
+        <span>{selected ? `${selected.name} (${selected.code})` : value || t('profile.selectLanguage')}</span>
         <span style={{ fontSize: 10, color: m.ink50 }}>▾</span>
       </button>
       {open && (
         <Dropdown m={m}>
-          <DropdownSearch m={m} value={search} onChange={setSearch} placeholder="Search…" />
+          <DropdownSearch m={m} value={search} onChange={setSearch} placeholder={t('profile.searchPlaceholder')} />
           {filtered.length === 0
             ? <DropdownEmpty m={m} />
             : filtered.map((l) => (
@@ -302,7 +300,7 @@ function LanguageSelect({ m, value, onChange }) {
 
 // ─── TimezoneSelect ──────────────────────────────────────────────
 
-function TimezoneSelect({ m, value, onChange }) {
+function TimezoneSelect({ m, t, value, onChange }) {
   const [open, setOpen]   = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef(null);
@@ -318,12 +316,12 @@ function TimezoneSelect({ m, value, onChange }) {
         onClick={() => { setOpen((o) => !o); setSearch(''); }}
         style={selectBtnStyle(m)}
       >
-        <span style={{ fontFamily: m.mono, fontSize: 13 }}>{value || 'Select timezone'}</span>
+        <span style={{ fontFamily: m.mono, fontSize: 13 }}>{value || t('profile.selectTimezone')}</span>
         <span style={{ fontSize: 10, color: m.ink50 }}>▾</span>
       </button>
       {open && (
         <Dropdown m={m} maxH={220}>
-          <DropdownSearch m={m} value={search} onChange={setSearch} placeholder="Europe/Kyiv…" mono />
+          <DropdownSearch m={m} value={search} onChange={setSearch} placeholder={t('profile.tzSearchPlaceholder')} mono />
           {filtered.length === 0
             ? <DropdownEmpty m={m} />
             : filtered.slice(0, 100).map((tz) => (
@@ -343,7 +341,7 @@ function TimezoneSelect({ m, value, onChange }) {
 
 // ─── LanguageMultiSelect ─────────────────────────────────────────
 
-function LanguageMultiSelect({ m, value, onChange }) {
+function LanguageMultiSelect({ m, t, value, onChange }) {
   const [open, setOpen]   = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef(null);
@@ -398,13 +396,13 @@ function LanguageMultiSelect({ m, value, onChange }) {
               color: m.ink50, cursor: 'pointer', fontSize: 12, fontFamily: m.mono,
             }}
           >
-            + Add
+            {t('profile.addLanguage')}
           </button>
           {open && (
             <Dropdown m={m} left={0} maxH={200}>
-              <DropdownSearch m={m} value={search} onChange={setSearch} placeholder="Search…" />
+              <DropdownSearch m={m} value={search} onChange={setSearch} placeholder={t('profile.searchPlaceholder')} />
               {filtered.length === 0
-                ? <DropdownEmpty m={m} text={search ? 'No match' : 'All added'} />
+                ? <DropdownEmpty m={m} text={search ? t('profile.noMatch') : t('profile.allAdded')} />
                 : filtered.map((l) => (
                   <DropdownItem key={l.code} m={m} onClick={() => add(l.code)}>
                     {l.name} <span style={{ fontFamily: m.mono, color: m.ink50, fontSize: 11 }}>({l.code})</span>
@@ -426,7 +424,7 @@ const TZ_RANGES = [
   'UTC+5 to UTC+7',  'UTC+8 to UTC+10','UTC+10 to UTC+14',
 ];
 
-function TimezoneRangeSelect({ m, value, onChange }) {
+function TimezoneRangeSelect({ m, t, value, onChange }) {
   return (
     <select
       value={value}
@@ -439,7 +437,7 @@ function TimezoneRangeSelect({ m, value, onChange }) {
         appearance: 'none',
       }}
     >
-      <option value="">Any timezone</option>
+      <option value="">{t('profile.anyTimezone')}</option>
       {TZ_RANGES.map((r) => <option key={r} value={r}>{r}</option>)}
     </select>
   );
@@ -447,7 +445,7 @@ function TimezoneRangeSelect({ m, value, onChange }) {
 
 // ─── AvailabilityGrid ────────────────────────────────────────────
 
-function AvailabilityGrid({ m, selected, onChange }) {
+function AvailabilityGrid({ m, t, selected, onChange }) {
   const dragging  = useRef(false);
   const dragAction = useRef('add'); // 'add' | 'remove'
 
@@ -513,15 +511,15 @@ function AvailabilityGrid({ m, selected, onChange }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink50 }}>
           {totalHours > 0
-            ? `${totalHours}h across ${daysActive} day${daysActive !== 1 ? 's' : ''}`
-            : 'No availability set'}
+            ? t('profile.availabilitySummary', { count: totalHours, days: daysActive })
+            : t('profile.availabilityNone')}
         </div>
         {totalHours > 0 && (
           <button
             type="button" onClick={clearAll}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontFamily: m.mono, color: m.ink50 }}
           >
-            Clear all
+            {t('profile.availabilityClear')}
           </button>
         )}
       </div>
@@ -535,7 +533,7 @@ function AvailabilityGrid({ m, selected, onChange }) {
           <button
             key={day} type="button"
             onClick={() => toggleDay(day)}
-            title={`Toggle all ${day_label(day)}`}
+            title={t('profile.toggleDay', { day: t(`profile.days.${day}`) })}
             style={{
               background: m.ink10, border: 'none', cursor: 'pointer',
               borderRadius: 4, height: 22,
@@ -543,7 +541,7 @@ function AvailabilityGrid({ m, selected, onChange }) {
               textTransform: 'uppercase',
             }}
           >
-            {DAY_SHORT[i]}
+            {t(`profile.days.${day}`)}
           </button>
         ))}
 
@@ -555,7 +553,7 @@ function AvailabilityGrid({ m, selected, onChange }) {
               key={`lbl-${hour}`}
               type="button"
               onClick={() => toggleHour(hour)}
-              title={`Toggle ${hour}:00 for all days`}
+              title={t('profile.toggleHour', { hour: String(hour).padStart(2, '0') })}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
                 textAlign: 'right', paddingRight: 6,
@@ -591,7 +589,7 @@ function AvailabilityGrid({ m, selected, onChange }) {
       </div>
 
       <div style={{ marginTop: 10, fontSize: 11, color: m.ink50, fontFamily: m.mono }}>
-        Click or drag to toggle · Click a day/hour label to toggle the whole column/row
+        {t('profile.availabilityFooter')}
       </div>
     </div>
   );
@@ -652,10 +650,10 @@ function DropdownItem({ m, children, onClick, active }) {
   );
 }
 
-function DropdownEmpty({ m, text = 'No results' }) {
+function DropdownEmpty({ m, text }) {
   return (
     <div style={{ padding: '10px 12px', fontSize: 12, color: m.ink50, fontFamily: m.mono }}>
-      {text}
+      {text || 'No results'}
     </div>
   );
 }
@@ -728,8 +726,8 @@ function Textarea({ m, rows = 3, ...rest }) {
   );
 }
 
-function RatingBadge({ m, rating }) {
-  if (rating == null) return <div style={{ fontSize: 12, color: m.ink50, fontFamily: m.mono }}>no reviews yet</div>;
+function RatingBadge({ m, t, rating }) {
+  if (rating == null) return <div style={{ fontSize: 12, color: m.ink50, fontFamily: m.mono }}>{t('profile.noReviews')}</div>;
   return (
     <div style={{ background: m.accentSoft, color: m.accent, padding: '6px 12px', borderRadius: 8, fontFamily: m.mono, fontSize: 13 }}>
       ★ {Number(rating).toFixed(2)} / 5

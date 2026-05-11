@@ -1,27 +1,35 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/theme.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import * as authApi from '../api/auth.js';
 
 // Top navigation bar. Rendered by <Layout> on every authenticated screen.
-// Adapted from frontend/directions/minimal-v2.jsx · MinNav with:
-//   - "Messages" dropped (out of MVP scope)
-//   - real react-router <NavLink>s instead of static spans
-//   - avatar dropdown wired to AuthContext.logout()
+//
+// i18n: useTranslation() gives us:
+//   - t('nav.browse')         — translated string
+//   - i18n.language           — current language code: 'en' | 'uk'
+//   - i18n.changeLanguage(lng) — switch; i18next-browser-languagedetector
+//                                 persists the choice to localStorage automatically
+//
+// The NAV_ITEMS list now stores translation KEYS instead of literal strings,
+// and the JSX calls t(item.labelKey) on render. This way switching language
+// re-renders all components subscribed via useTranslation().
 
 const NAV_ITEMS = [
-  { label: 'Browse',    to: '/browse'    },
-  { label: 'Matches',   to: '/matches'   },
-  { label: 'Skills',    to: '/skills'    },
-  { label: 'Sessions',  to: '/sessions'  },
-  { label: 'Wallet',    to: '/wallet'    },
-  { label: 'Dashboard', to: '/dashboard' },
+  { labelKey: 'nav.browse',    to: '/browse'    },
+  { labelKey: 'nav.matches',   to: '/matches'   },
+  { labelKey: 'nav.skills',    to: '/skills'    },
+  { labelKey: 'nav.sessions',  to: '/sessions'  },
+  { labelKey: 'nav.wallet',    to: '/wallet'    },
+  { labelKey: 'nav.dashboard', to: '/dashboard' },
 ];
 
 export default function Nav() {
   const { m, mode, setMode } = useTheme();
   const { email, logout } = useAuth();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
   // Avatar dropdown open/closed state
@@ -44,6 +52,14 @@ export default function Nav() {
     logout();
     navigate('/login', { replace: true });
   }
+
+  // Language toggle — flips between 'en' and 'uk'. i18next persists the
+  // choice via the LanguageDetector localStorage cache (see i18n.js).
+  function toggleLanguage() {
+    const next = i18n.language?.startsWith('uk') ? 'en' : 'uk';
+    i18n.changeLanguage(next);
+  }
+  const isUk = i18n.language?.startsWith('uk');
 
   // First letter of the email goes into the avatar circle.
   const initial = (email || '?').trim().charAt(0).toUpperCase();
@@ -108,7 +124,7 @@ export default function Nav() {
           >
             {({ isActive }) => (
               <>
-                {item.label}
+                {t(item.labelKey)}
                 {isActive && (
                   <span
                     style={{
@@ -127,11 +143,31 @@ export default function Nav() {
         ))}
       </div>
 
+      {/* ─── Language toggle ─── */}
+      <button
+        type="button"
+        onClick={toggleLanguage}
+        title={t('nav.switchLanguage')}
+        style={{
+          background: m.ink10,
+          border: 'none',
+          borderRadius: 999,
+          padding: '5px 12px',
+          cursor: 'pointer',
+          fontFamily: m.mono,
+          fontSize: 12,
+          color: m.ink70,
+          marginRight: 8,
+        }}
+      >
+        {isUk ? 'EN' : 'УК'}
+      </button>
+
       {/* ─── Theme toggle ─── */}
       <button
         type="button"
         onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')}
-        title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        title={mode === 'dark' ? t('nav.switchLight') : t('nav.switchDark')}
         style={{
           background: m.ink10,
           border: 'none',
@@ -148,7 +184,7 @@ export default function Nav() {
         }}
       >
         {mode === 'dark' ? '☀' : '☾'}
-        <span>{mode === 'dark' ? 'light' : 'dark'}</span>
+        <span>{mode === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}</span>
       </button>
 
       {/* ─── Avatar + dropdown ─── */}
@@ -217,10 +253,10 @@ export default function Nav() {
             }}
           >
             <DropdownLink m={m} to="/profile" onClick={() => setMenuOpen(false)}>
-              Edit profile
+              {t('nav.editProfile')}
             </DropdownLink>
             <DropdownLink m={m} to="/wallet" onClick={() => setMenuOpen(false)}>
-              Wallet
+              {t('nav.wallet')}
             </DropdownLink>
             <div style={{ height: 1, background: m.ink10, margin: '4px 0' }} />
             <button
@@ -239,7 +275,7 @@ export default function Nav() {
                 borderRadius: 6,
               }}
             >
-              Log out
+              {t('nav.logout')}
             </button>
           </div>
         )}

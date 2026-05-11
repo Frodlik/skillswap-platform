@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/theme.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import * as authApi from '../../api/auth.js';
@@ -6,14 +7,21 @@ import * as authApi from '../../api/auth.js';
 const MOD_RED = '#d33b3b';
 
 const NAV_TABS = [
-  { label: 'Queue', to: '/mod/queue' },
-  { label: 'Users', to: '/mod/users' },
+  { labelKey: 'mod.nav.queue', to: '/mod/queue' },
+  { labelKey: 'mod.nav.users', to: '/mod/users' },
 ];
 
 export default function ModLayout() {
   const { m, mode, setMode } = useTheme();
+  const { t, i18n } = useTranslation();
   const { email, logout } = useAuth();
   const navigate = useNavigate();
+
+  function toggleLanguage() {
+    const next = i18n.language?.startsWith('uk') ? 'en' : 'uk';
+    i18n.changeLanguage(next);
+  }
+  const isUk = i18n.language?.startsWith('uk');
 
   const displayName = email ? email.split('@')[0] : '?';
   const initial = displayName.charAt(0).toUpperCase();
@@ -50,7 +58,7 @@ export default function ModLayout() {
             padding: '3px 8px', borderRadius: 4,
             background: MOD_RED, color: '#fff',
             textTransform: 'uppercase', letterSpacing: '0.06em',
-          }}>MOD</span>
+          }}>{t('mod.badge')}</span>
         </div>
 
         {/* Center: tab links */}
@@ -69,7 +77,7 @@ export default function ModLayout() {
             >
               {({ isActive }) => (
                 <>
-                  {tab.label}
+                  {t(tab.labelKey)}
                   {isActive && (
                     <span style={{
                       position: 'absolute', left: 0, right: 0,
@@ -82,12 +90,24 @@ export default function ModLayout() {
           ))}
         </div>
 
-        {/* Right: theme toggle + identity + logout */}
+        {/* Right: lang + theme toggle + identity + logout */}
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <button
             type="button"
+            onClick={toggleLanguage}
+            title={t('nav.switchLanguage')}
+            style={{
+              background: m.ink10, border: 'none', borderRadius: 999,
+              padding: '5px 12px', cursor: 'pointer',
+              fontFamily: m.mono, fontSize: 12, color: m.ink70,
+            }}
+          >
+            {isUk ? 'EN' : 'УК'}
+          </button>
+          <button
+            type="button"
             onClick={() => setMode(mode === 'dark' ? 'light' : 'dark')}
-            title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={mode === 'dark' ? t('nav.switchLight') : t('nav.switchDark')}
             style={{
               background: m.ink10, border: 'none', borderRadius: 999,
               padding: '5px 12px', cursor: 'pointer',
@@ -96,7 +116,7 @@ export default function ModLayout() {
             }}
           >
             {mode === 'dark' ? '☀' : '☾'}
-            <span>{mode === 'dark' ? 'light' : 'dark'}</span>
+            <span>{mode === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}</span>
           </button>
           <button
             type="button"
@@ -106,7 +126,7 @@ export default function ModLayout() {
               background: 'transparent', border: 'none', cursor: 'pointer',
             }}
           >
-            {displayName} · mod
+            {t('mod.nav.identity', { name: displayName })}
           </button>
           <div style={{
             width: 28, height: 28, borderRadius: 999,

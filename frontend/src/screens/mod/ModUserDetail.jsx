@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/theme.jsx';
 import * as usersApi from '../../api/users.js';
 import * as modApi from '../../api/moderation.js';
@@ -20,6 +21,7 @@ function sanctionStatus(s) {
 
 export default function ModUserDetail() {
   const { m } = useTheme();
+  const { t } = useTranslation();
   const { userId } = useParams();
 
   const [profile, setProfile]     = useState(null);
@@ -79,9 +81,9 @@ export default function ModUserDetail() {
 
   async function handleIssueSanction(e) {
     e.preventDefault();
-    if (!reason.trim()) { setFormError('Reason is required.'); return; }
-    if (type === 'TEMP_BAN' && !expiresAt) { setFormError('Expires at is required for TEMP_BAN.'); return; }
-    if (type === 'TEMP_BAN' && new Date(expiresAt) <= new Date()) { setFormError('Expires at must be in the future.'); return; }
+    if (!reason.trim()) { setFormError(t('mod.userDetail.reasonRequired')); return; }
+    if (type === 'TEMP_BAN' && !expiresAt) { setFormError(t('mod.userDetail.expiresRequired')); return; }
+    if (type === 'TEMP_BAN' && new Date(expiresAt) <= new Date()) { setFormError(t('mod.userDetail.expiresFuture')); return; }
     setFormError('');
     setFormBusy(true);
     try {
@@ -117,15 +119,15 @@ export default function ModUserDetail() {
     }
   }
 
-  if (loading) return <div style={{ padding: 40, color: 'rgba(14,14,12,0.5)', fontFamily: 'IBM Plex Mono', fontSize: 13 }}>Loading…</div>;
-  if (error)   return <div style={{ padding: 40, color: '#d33b3b', fontFamily: 'IBM Plex Mono', fontSize: 13 }}>Error: {error}</div>;
+  if (loading) return <div style={{ padding: 40, color: 'rgba(14,14,12,0.5)', fontFamily: 'IBM Plex Mono', fontSize: 13 }}>{t('mod.userDetail.loading')}</div>;
+  if (error)   return <div style={{ padding: 40, color: '#d33b3b', fontFamily: 'IBM Plex Mono', fontSize: 13 }}>{t('mod.userDetail.errorPrefix')} {error}</div>;
 
   const initial = (profile?.displayName ?? '?').charAt(0).toUpperCase();
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: 860 }}>
       <Link to="/mod/queue" style={{ fontSize: 13, color: 'rgba(14,14,12,0.7)', textDecoration: 'none', fontFamily: 'IBM Plex Mono', display: 'block', marginBottom: 24 }}>
-        ← Queue
+        {t('mod.userDetail.back')}
       </Link>
 
       {/* Profile header */}
@@ -147,16 +149,16 @@ export default function ModUserDetail() {
           border: `1px solid ${m.ink20}`, borderRadius: 7,
           fontSize: 13, fontFamily: m.font, color: m.ink, cursor: 'pointer',
         }}>
-          {editOpen ? 'Cancel' : 'Edit profile'}
+          {editOpen ? t('mod.userDetail.cancel') : t('mod.userDetail.editProfile')}
         </button>
       </div>
 
       {/* Edit profile form */}
       {editOpen && (
         <form onSubmit={handleSaveProfile} style={{ background: m.panel, border: `1px solid ${m.ink10}`, borderRadius: 10, padding: 20, marginBottom: 28 }}>
-          <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Edit profile</div>
+          <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>{t('mod.userDetail.editTitle')}</div>
           <label style={{ display: 'block', marginBottom: 12 }}>
-            <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink70, marginBottom: 6 }}>Display name</div>
+            <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink70, marginBottom: 6 }}>{t('mod.userDetail.displayName')}</div>
             <input value={editName} onChange={(e) => setEditName(e.target.value)} style={{
               width: '100%', padding: '9px 12px', background: m.bg, color: m.ink,
               border: `1px solid ${m.ink20}`, borderRadius: 7, fontSize: 13,
@@ -164,7 +166,7 @@ export default function ModUserDetail() {
             }} />
           </label>
           <label style={{ display: 'block', marginBottom: 14 }}>
-            <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink70, marginBottom: 6 }}>Bio</div>
+            <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink70, marginBottom: 6 }}>{t('mod.userDetail.bio')}</div>
             <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} rows={3} style={{
               width: '100%', padding: '9px 12px', background: m.bg, color: m.ink,
               border: `1px solid ${m.ink20}`, borderRadius: 7, fontSize: 13,
@@ -177,16 +179,16 @@ export default function ModUserDetail() {
             borderRadius: 7, fontSize: 13, fontFamily: m.font, fontWeight: 500,
             cursor: editBusy ? 'not-allowed' : 'pointer',
           }}>
-            {editBusy ? 'Saving…' : 'Save'}
+            {editBusy ? t('mod.userDetail.saving') : t('mod.userDetail.save')}
           </button>
         </form>
       )}
 
       {/* Sanction history */}
       <div style={{ marginBottom: 28 }}>
-        <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Sanction history</div>
+        <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>{t('mod.userDetail.sanctionHistory')}</div>
         {sanctions.length === 0 ? (
-          <div style={{ color: m.ink50, fontFamily: m.mono, fontSize: 13 }}>No sanctions on record.</div>
+          <div style={{ color: m.ink50, fontFamily: m.mono, fontSize: 13 }}>{t('mod.userDetail.noSanctions')}</div>
         ) : (
           <div style={{ background: m.panel, border: `1px solid ${m.ink10}`, borderRadius: 10, overflow: 'hidden' }}>
             {sanctions.map((s, i) => {
@@ -214,14 +216,14 @@ export default function ModUserDetail() {
                     color: st === 'ACTIVE' ? '#d33b3b' : m.ink50,
                     textTransform: 'uppercase', letterSpacing: '0.06em',
                     display: 'inline-block',
-                  }}>{st}</span>
+                  }}>{t(`mod.userDetail.status.${st}`, st)}</span>
                   {st === 'ACTIVE' ? (
                     <button type="button" onClick={() => handleLiftSanction(s.id)} style={{
                       padding: '5px 10px', background: 'transparent',
                       border: `1px solid ${m.ink20}`, borderRadius: 6,
                       fontSize: 12, fontFamily: m.font, color: m.ink, cursor: 'pointer',
                     }}>
-                      Lift
+                      {t('mod.userDetail.lift')}
                     </button>
                   ) : <span />}
                 </div>
@@ -233,35 +235,35 @@ export default function ModUserDetail() {
 
       {/* Issue sanction form */}
       <div style={{ background: m.panel, border: `1px solid ${m.ink10}`, borderRadius: 10, padding: 20 }}>
-        <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>Issue sanction</div>
+        <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>{t('mod.userDetail.issueSanction')}</div>
         <form onSubmit={handleIssueSanction}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-            {SANCTION_TYPES.map((t) => (
-              <label key={t} style={{
+            {SANCTION_TYPES.map((st) => (
+              <label key={st} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '7px 12px', borderRadius: 6, cursor: 'pointer',
-                border: `1px solid ${type === t ? m.accent : m.ink10}`,
-                background: type === t ? m.accentSoft : 'transparent',
+                border: `1px solid ${type === st ? m.accent : m.ink10}`,
+                background: type === st ? m.accentSoft : 'transparent',
                 fontSize: 12.5, fontFamily: m.mono,
               }}>
                 <input
-                  type="radio" name="sanctionType" value={t}
-                  checked={type === t}
-                  onChange={() => { setType(t); setExpiresAt(''); setFormError(''); }}
+                  type="radio" name="sanctionType" value={st}
+                  checked={type === st}
+                  onChange={() => { setType(st); setExpiresAt(''); setFormError(''); }}
                   style={{ accentColor: m.accent }}
                 />
-                {t.replace(/_/g, ' ')}
+                {st.replace(/_/g, ' ')}
               </label>
             ))}
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink70, marginBottom: 6 }}>Reason <span style={{ color: '#d33b3b' }}>*</span></div>
+            <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink70, marginBottom: 6 }}>{t('mod.userDetail.reason')} <span style={{ color: '#d33b3b' }}>*</span></div>
             <textarea
               value={reason}
               onChange={(e) => { setReason(e.target.value); setFormError(''); }}
               rows={2}
-              placeholder="Describe the violation…"
+              placeholder={t('mod.userDetail.reasonPlaceholder')}
               style={{
                 width: '100%', padding: '9px 12px', background: m.bg, color: m.ink,
                 border: `1px solid ${formError && !reason ? '#d33b3b' : m.ink20}`,
@@ -273,7 +275,7 @@ export default function ModUserDetail() {
 
           {type === 'TEMP_BAN' && (
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink70, marginBottom: 6 }}>Expires at <span style={{ color: '#d33b3b' }}>*</span></div>
+              <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink70, marginBottom: 6 }}>{t('mod.userDetail.expiresAt')} <span style={{ color: '#d33b3b' }}>*</span></div>
               <input
                 type="datetime-local"
                 value={expiresAt}
@@ -295,7 +297,7 @@ export default function ModUserDetail() {
             borderRadius: 7, fontSize: 13, fontFamily: m.font, fontWeight: 500,
             cursor: formBusy ? 'not-allowed' : 'pointer', opacity: formBusy ? 0.6 : 1,
           }}>
-            {formBusy ? 'Issuing…' : 'Issue sanction'}
+            {formBusy ? t('mod.userDetail.issuing') : t('mod.userDetail.issueButton')}
           </button>
         </form>
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/theme.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import * as skillsApi from '../api/skills.js';
@@ -12,10 +13,9 @@ import * as skillsApi from '../api/skills.js';
 // Two columns: left = your offers (skill-match weight 0.30), right = your wants.
 // "Add" opens an inline modal with the create form.
 
-const LEVEL_LABELS = ['—', 'Beginner', 'Elementary', 'Intermediate', 'Advanced', 'Expert'];
-
 export default function Skills() {
   const { m } = useTheme();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.sub;
 
@@ -67,7 +67,7 @@ export default function Skills() {
   }
 
   async function handleDelete(skillId) {
-    if (!confirm('Delete this skill?')) return;
+    if (!confirm(t('skills.deleteConfirm'))) return;
     try {
       await skillsApi.deleteSkill(skillId);
       setSkills((prev) => prev.filter((s) => s.id !== skillId));
@@ -76,33 +76,35 @@ export default function Skills() {
     }
   }
 
-  if (loading) return <Centered m={m} title="Loading skills…" />;
-  if (error) return <Centered m={m} title="Couldn't load skills" subtitle={error} />;
+  if (loading) return <Centered m={m} title={t('skills.loading')} />;
+  if (error) return <Centered m={m} title={t('skills.loadError')} subtitle={error} />;
 
   return (
     <div style={{ padding: '24px 40px' }}>
-      <Header m={m} count={skills.length} offers={offers.length} wants={wants.length} />
+      <Header m={m} t={t} count={skills.length} offers={offers.length} wants={wants.length} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
         <Column
           m={m}
-          eyebrow={`You teach · ${offers.length} ${offers.length === 1 ? 'offer' : 'offers'}`}
-          ctaLabel="+ Add offer"
+          t={t}
+          eyebrow={t('skills.offersEyebrow', { count: offers.length })}
+          ctaLabel={t('skills.addOffer')}
           ctaSolid
           onCta={() => setModal('OFFER')}
           items={offers}
-          emptyText="You haven't listed anything to teach yet."
+          emptyText={t('skills.emptyOffers')}
           accent={false}
           onDelete={handleDelete}
         />
         <Column
           m={m}
-          eyebrow={`You want · ${wants.length} ${wants.length === 1 ? 'want' : 'wants'}`}
-          ctaLabel="+ Add want"
+          t={t}
+          eyebrow={t('skills.wantsEyebrow', { count: wants.length })}
+          ctaLabel={t('skills.addWant')}
           ctaSolid={false}
           onCta={() => setModal('WANT')}
           items={wants}
-          emptyText="You haven't listed anything to learn yet."
+          emptyText={t('skills.emptyWants')}
           accent
           onDelete={handleDelete}
         />
@@ -111,6 +113,7 @@ export default function Skills() {
       {modal && (
         <SkillModal
           m={m}
+          t={t}
           type={modal}
           categories={categories}
           onCancel={() => setModal(null)}
@@ -123,19 +126,19 @@ export default function Skills() {
 
 // ─── header ─────────────────────────────────────────────────────
 
-function Header({ m, count, offers, wants }) {
+function Header({ m, t, count, offers, wants }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 22 }}>
       <div>
         <h2 style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-          My skills
+          {t('skills.title')}
         </h2>
         <div style={{ fontSize: 13, color: m.ink50, marginTop: 2 }}>
-          What you teach, what you'd like to learn. Both feed the matcher.
+          {t('skills.subtitle')}
         </div>
       </div>
       <div style={{ fontFamily: m.mono, fontSize: 12, color: m.ink70 }}>
-        {offers} offer{offers === 1 ? '' : 's'} · {wants} want{wants === 1 ? '' : 's'}
+        {t('skills.summary', { count: offers, offers, wants })}
       </div>
     </div>
   );
@@ -143,7 +146,7 @@ function Header({ m, count, offers, wants }) {
 
 // ─── one column (offers OR wants) ───────────────────────────────
 
-function Column({ m, eyebrow, ctaLabel, ctaSolid, onCta, items, emptyText, accent, onDelete }) {
+function Column({ m, t, eyebrow, ctaLabel, ctaSolid, onCta, items, emptyText, accent, onDelete }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -193,7 +196,7 @@ function Column({ m, eyebrow, ctaLabel, ctaSolid, onCta, items, emptyText, accen
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {items.map((s) => (
-            <SkillCard key={s.id} m={m} skill={s} accent={accent} onDelete={() => onDelete(s.id)} />
+            <SkillCard key={s.id} m={m} t={t} skill={s} accent={accent} onDelete={() => onDelete(s.id)} />
           ))}
         </div>
       )}
@@ -203,7 +206,7 @@ function Column({ m, eyebrow, ctaLabel, ctaSolid, onCta, items, emptyText, accen
 
 // ─── one skill card ─────────────────────────────────────────────
 
-function SkillCard({ m, skill, accent, onDelete }) {
+function SkillCard({ m, t, skill, accent, onDelete }) {
   return (
     <div
       style={{
@@ -221,7 +224,7 @@ function SkillCard({ m, skill, accent, onDelete }) {
         </div>
       </div>
       <div style={{ fontSize: 12, color: m.ink50, fontFamily: m.mono, marginBottom: 10 }}>
-        {LEVEL_LABELS[skill.level] || `Level ${skill.level}`}
+        {t(`skills.level.${skill.level}`, `Level ${skill.level}`)}
       </div>
       {skill.description && (
         <p style={{ margin: '0 0 10px', fontSize: 13, color: m.ink70, lineHeight: 1.5 }}>
@@ -230,9 +233,9 @@ function SkillCard({ m, skill, accent, onDelete }) {
       )}
       {skill.tags?.length > 0 && (
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
-          {skill.tags.map((t) => (
+          {skill.tags.map((tag) => (
             <span
-              key={t}
+              key={tag}
               style={{
                 fontSize: 11,
                 padding: '2px 7px',
@@ -242,7 +245,7 @@ function SkillCard({ m, skill, accent, onDelete }) {
                 fontFamily: m.mono,
               }}
             >
-              {t}
+              {tag}
             </span>
           ))}
         </div>
@@ -262,7 +265,7 @@ function SkillCard({ m, skill, accent, onDelete }) {
             cursor: 'pointer',
           }}
         >
-          Delete
+          {t('skills.delete')}
         </button>
       </div>
     </div>
@@ -271,7 +274,7 @@ function SkillCard({ m, skill, accent, onDelete }) {
 
 // ─── add modal ──────────────────────────────────────────────────
 
-function SkillModal({ m, type, categories, onCancel, onSubmit }) {
+function SkillModal({ m, t, type, categories, onCancel, onSubmit }) {
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [level, setLevel] = useState(3);
@@ -353,10 +356,10 @@ function SkillModal({ m, type, categories, onCancel, onSubmit }) {
             marginBottom: 4,
           }}
         >
-          {type === 'OFFER' ? 'You teach' : 'You want'}
+          {type === 'OFFER' ? t('skills.modal.eyebrowOffer') : t('skills.modal.eyebrowWant')}
         </div>
         <h3 style={{ fontSize: 22, letterSpacing: '-0.02em', fontWeight: 500, margin: '0 0 18px' }}>
-          {type === 'OFFER' ? 'Add a new offer' : 'Add a new want'}
+          {type === 'OFFER' ? t('skills.modal.titleOffer') : t('skills.modal.titleWant')}
         </h3>
 
         {error && (
@@ -377,18 +380,18 @@ function SkillModal({ m, type, categories, onCancel, onSubmit }) {
         )}
 
         <form onSubmit={handleSubmit}>
-          <Field m={m} label="Name" required>
+          <Field m={m} label={t('skills.modal.name')} required>
             <Input
               m={m}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Conversational Spanish"
+              placeholder={t('skills.modal.namePlaceholder')}
               required
             />
           </Field>
 
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
-            <Field m={m} label="Category" required>
+            <Field m={m} label={t('skills.modal.category')} required>
               <Select
                 m={m}
                 value={categoryId}
@@ -402,7 +405,7 @@ function SkillModal({ m, type, categories, onCancel, onSubmit }) {
                 ))}
               </Select>
             </Field>
-            <Field m={m} label="Level (1–5)" required>
+            <Field m={m} label={t('skills.modal.level')} required>
               <Select
                 m={m}
                 value={level}
@@ -411,23 +414,23 @@ function SkillModal({ m, type, categories, onCancel, onSubmit }) {
               >
                 {[1, 2, 3, 4, 5].map((n) => (
                   <option key={n} value={n}>
-                    {n} — {LEVEL_LABELS[n]}
+                    {t('skills.levelOption', { n, label: t(`skills.level.${n}`) })}
                   </option>
                 ))}
               </Select>
             </Field>
           </div>
 
-          <Field m={m} label="Tags" hint="comma-separated; e.g. spring, jpa, hibernate">
+          <Field m={m} label={t('skills.modal.tags')} hint={t('skills.modal.tagsHint')}>
             <Input
               m={m}
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="java, spring"
+              placeholder={t('skills.modal.tagsPlaceholder')}
             />
           </Field>
 
-          <Field m={m} label="Description" hint="optional · 280 chars">
+          <Field m={m} label={t('skills.modal.description')} hint={t('skills.modal.descriptionHint')}>
             <Textarea
               m={m}
               value={description}
@@ -455,7 +458,7 @@ function SkillModal({ m, type, categories, onCancel, onSubmit }) {
                 opacity: submitting ? 0.6 : 1,
               }}
             >
-              {submitting ? 'Saving…' : type === 'OFFER' ? 'Add offer →' : 'Add want →'}
+              {submitting ? t('skills.modal.saving') : type === 'OFFER' ? t('skills.modal.submitOffer') : t('skills.modal.submitWant')}
             </button>
             <button
               type="button"
@@ -471,7 +474,7 @@ function SkillModal({ m, type, categories, onCancel, onSubmit }) {
                 cursor: 'pointer',
               }}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </form>

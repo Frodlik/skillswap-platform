@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/theme.jsx';
 import * as skillsApi from '../api/skills.js';
 import * as usersApi from '../api/users.js';
@@ -14,10 +15,9 @@ import * as usersApi from '../api/users.js';
 // Side panel = categories list (with counts) and a tag filter input.
 // Main grid = skill cards with poster's name (resolved via getProfile).
 
-const LEVEL_LABELS = ['—', 'Beginner', 'Elementary', 'Intermediate', 'Advanced', 'Expert'];
-
 export default function Browse() {
   const { m } = useTheme();
+  const { t } = useTranslation();
 
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -82,13 +82,14 @@ export default function Browse() {
     return c;
   }, [skills]);
 
-  if (loading) return <Centered m={m} title="Loading catalogue…" />;
-  if (error) return <Centered m={m} title="Couldn't load skills" subtitle={error} />;
+  if (loading) return <Centered m={m} title={t('browse.loading')} />;
+  if (error) return <Centered m={m} title={t('browse.loadError')} subtitle={error} />;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr' }}>
       <Sidebar
         m={m}
+        t={t}
         categories={flatCats}
         counts={counts}
         total={skills.length}
@@ -96,13 +97,13 @@ export default function Browse() {
         onCategory={setActiveCategory}
       />
       <div style={{ padding: '20px 28px' }}>
-        <SearchBar m={m} tag={tag} setTag={setTag} count={skills.length} />
+        <SearchBar m={m} t={t} tag={tag} setTag={setTag} count={skills.length} />
         {skills.length === 0 ? (
-          <EmptyState m={m} hasFilter={tag || activeCategory} />
+          <EmptyState m={m} t={t} hasFilter={tag || activeCategory} />
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
             {skills.map((s) => (
-              <SkillCard key={s.id} m={m} skill={s} profile={profiles[s.userId]} />
+              <SkillCard key={s.id} m={m} t={t} skill={s} profile={profiles[s.userId]} />
             ))}
           </div>
         )}
@@ -113,13 +114,13 @@ export default function Browse() {
 
 // ─── Sidebar ────────────────────────────────────────────────────
 
-function Sidebar({ m, categories, counts, total, activeCategory, onCategory }) {
+function Sidebar({ m, t, categories, counts, total, activeCategory, onCategory }) {
   return (
     <div style={{ borderRight: `1px solid ${m.ink10}`, padding: '20px 18px', minHeight: '100vh' }}>
-      <Eyebrow m={m}>Categories</Eyebrow>
+      <Eyebrow m={m}>{t('browse.categoriesEyebrow')}</Eyebrow>
       <CategoryRow
         m={m}
-        label="All"
+        label={t('browse.categoryAll')}
         count={total}
         active={!activeCategory}
         onClick={() => onCategory(null)}
@@ -170,7 +171,7 @@ function CategoryRow({ m, label, count, active, onClick }) {
 
 // ─── Search bar ─────────────────────────────────────────────────
 
-function SearchBar({ m, tag, setTag, count }) {
+function SearchBar({ m, t, tag, setTag, count }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
       <div
@@ -190,7 +191,7 @@ function SearchBar({ m, tag, setTag, count }) {
         <input
           value={tag}
           onChange={(e) => setTag(e.target.value)}
-          placeholder="Filter by tag (e.g. spring, watercolor)"
+          placeholder={t('browse.searchPlaceholder')}
           style={{
             flex: 1,
             background: 'transparent',
@@ -203,7 +204,7 @@ function SearchBar({ m, tag, setTag, count }) {
         />
       </div>
       <div style={{ fontSize: 12, fontFamily: m.mono, color: m.ink50 }}>
-        {count} {count === 1 ? 'skill' : 'skills'}
+        {t('browse.skillCount', { count })}
       </div>
     </div>
   );
@@ -211,7 +212,7 @@ function SearchBar({ m, tag, setTag, count }) {
 
 // ─── Skill card ─────────────────────────────────────────────────
 
-function SkillCard({ m, skill, profile }) {
+function SkillCard({ m, t, skill, profile }) {
   const teacherName = profile?.displayName || `user-${skill.userId.slice(0, 8)}`;
   const teacherLocation = profile?.location || profile?.timezone || '—';
   return (
@@ -253,7 +254,7 @@ function SkillCard({ m, skill, profile }) {
             borderRadius: 4,
           }}
         >
-          {LEVEL_LABELS[skill.level]?.toUpperCase()}
+          {t(`skills.level.${skill.level}`, '').toUpperCase()}
         </span>
       </div>
       <div style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', marginBottom: 10, lineHeight: 1.2 }}>
@@ -282,9 +283,9 @@ function SkillCard({ m, skill, profile }) {
       </div>
       {skill.tags?.length > 0 && (
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          {skill.tags.map((t) => (
+          {skill.tags.map((tag) => (
             <span
-              key={t}
+              key={tag}
               style={{
                 fontSize: 11,
                 padding: '2px 7px',
@@ -294,7 +295,7 @@ function SkillCard({ m, skill, profile }) {
                 fontFamily: m.mono,
               }}
             >
-              {t}
+              {tag}
             </span>
           ))}
         </div>
@@ -322,7 +323,7 @@ function Eyebrow({ m, children }) {
   );
 }
 
-function EmptyState({ m, hasFilter }) {
+function EmptyState({ m, t, hasFilter }) {
   return (
     <div
       style={{
@@ -334,9 +335,7 @@ function EmptyState({ m, hasFilter }) {
         fontSize: 13.5,
       }}
     >
-      {hasFilter
-        ? 'No skills match your filters. Try clearing them.'
-        : 'No public skills yet — be the first to list one on /skills.'}
+      {hasFilter ? t('browse.emptyFiltered') : t('browse.emptyNone')}
     </div>
   );
 }

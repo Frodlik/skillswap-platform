@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/theme.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import * as sessionsApi from '../api/sessions.js';
@@ -14,6 +15,7 @@ import { formatWhen } from '../utils/format.js';
 
 export default function Dashboard() {
   const { m } = useTheme();
+  const { t } = useTranslation();
   const { user, email } = useAuth();
   const userId = user?.sub;
 
@@ -52,8 +54,8 @@ export default function Dashboard() {
     return () => { cancelled = true; };
   }, [userId]);
 
-  if (loading) return <Centered m={m} title="Loading dashboard…" />;
-  if (error) return <Centered m={m} title="Couldn't load dashboard" subtitle={error} />;
+  if (loading) return <Centered m={m} title={t('dashboard.loading')} />;
+  if (error) return <Centered m={m} title={t('dashboard.loadError')} subtitle={error} />;
 
   const offers = data.skills.filter((s) => s.type === 'OFFER').length;
   const wants = data.skills.filter((s) => s.type === 'WANT').length;
@@ -67,75 +69,72 @@ export default function Dashboard() {
 
   return (
     <div style={{ padding: '24px 40px', maxWidth: 1100, margin: '0 auto' }}>
-      <Welcome m={m} name={data.profile?.displayName || email} />
+      <Welcome m={m} t={t} name={data.profile?.displayName || email} />
 
       {/* Top row — 4 stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 18 }}>
         <StatCard
           m={m}
           to="/wallet"
-          eyebrow="Balance"
+          eyebrow={t('dashboard.card.balance')}
           big={data.balance ? data.balance.balance : 0}
-          unit="credits"
+          unit={t('dashboard.card.balanceUnit')}
           sub={
             data.balance
-              ? `${data.balance.heldBalance} in escrow`
-              : 'wallet not yet active'
+              ? t('dashboard.card.balanceSub', { count: data.balance.heldBalance })
+              : t('dashboard.card.balanceInactive')
           }
           accent
         />
         <StatCard
           m={m}
           to="/skills"
-          eyebrow="My skills"
+          eyebrow={t('dashboard.card.skills')}
           big={offers + wants}
-          unit="listed"
-          sub={`${offers} offer${offers === 1 ? '' : 's'} · ${wants} want${wants === 1 ? '' : 's'}`}
+          unit={t('dashboard.card.skillsUnit')}
+          sub={t('dashboard.card.skillsSub', { count: offers, offers, wants })}
         />
         <StatCard
           m={m}
           to="/sessions"
-          eyebrow="Upcoming sessions"
+          eyebrow={t('dashboard.card.upcoming')}
           big={upcoming.length}
-          unit={upcoming.length === 1 ? 'session' : 'sessions'}
+          unit={t('dashboard.card.upcomingUnit', { count: upcoming.length })}
           sub={
             pendingForMe > 0
-              ? `⚠ ${pendingForMe} pending your response`
-              : `${completed} completed lifetime`
+              ? t('dashboard.card.upcomingPending', { count: pendingForMe })
+              : t('dashboard.card.upcomingCompleted', { count: completed })
           }
         />
         <StatCard
           m={m}
           to="/matches"
-          eyebrow="Top matches"
+          eyebrow={t('dashboard.card.matches')}
           big={data.matches.length}
-          unit="ready"
+          unit={t('dashboard.card.matchesUnit')}
           sub={
             data.matches[0]
-              ? `best ${Math.round(data.matches[0].totalScore * 100)}%`
-              : 'list a skill to start'
+              ? t('dashboard.card.matchesBest', { pct: Math.round(data.matches[0].totalScore * 100) })
+              : t('dashboard.card.matchesEmpty')
           }
         />
       </div>
 
       {/* Bottom — two side-by-side panels */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        <Panel m={m} title="Next on your calendar" linkTo="/sessions" linkLabel="all sessions →">
+        <Panel m={m} title={t('dashboard.calendarTitle')} linkTo="/sessions" linkLabel={t('dashboard.calendarLink')}>
           {upcoming.length === 0 ? (
-            <Empty m={m} text="No upcoming sessions." />
+            <Empty m={m} text={t('dashboard.noUpcoming')} />
           ) : (
-            upcoming.slice(0, 4).map((s) => <UpcomingRow key={s.id} m={m} session={s} userId={userId} />)
+            upcoming.slice(0, 4).map((s) => <UpcomingRow key={s.id} m={m} t={t} session={s} userId={userId} />)
           )}
         </Panel>
 
-        <Panel m={m} title="Top matches" linkTo="/matches" linkLabel="all matches →">
+        <Panel m={m} title={t('dashboard.topMatchesTitle')} linkTo="/matches" linkLabel={t('dashboard.topMatchesLink')}>
           {data.matches.length === 0 ? (
-            <Empty
-              m={m}
-              text="No matches yet. List at least one offer and one want on /skills."
-            />
+            <Empty m={m} text={t('dashboard.noMatches')} />
           ) : (
-            data.matches.slice(0, 3).map((s) => <MatchRow key={s.matchId} m={m} suggestion={s} />)
+            data.matches.slice(0, 3).map((s) => <MatchRow key={s.matchId} m={m} t={t} suggestion={s} />)
           )}
         </Panel>
       </div>
@@ -145,14 +144,14 @@ export default function Dashboard() {
 
 // ─── Sub-components ─────────────────────────────────────────────
 
-function Welcome({ m, name }) {
+function Welcome({ m, t, name }) {
   return (
     <div style={{ marginBottom: 22 }}>
       <h2 style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-        Welcome back, <span style={{ fontStyle: 'italic', color: m.accent }}>{name}</span>
+        {t('dashboard.welcome')} <span style={{ fontStyle: 'italic', color: m.accent }}>{name}</span>
       </h2>
       <div style={{ fontSize: 13, color: m.ink50, marginTop: 4 }}>
-        Where things stand right now.
+        {t('dashboard.whereYouStand')}
       </div>
     </div>
   );
@@ -229,19 +228,19 @@ function Panel({ m, title, linkTo, linkLabel, children }) {
   );
 }
 
-function UpcomingRow({ m, session, userId }) {
+function UpcomingRow({ m, t, session, userId }) {
   const isTeacher = session.teacherId === userId;
   const isProposed = session.status === 'PROPOSED';
   const isMyInvite = isProposed && session.proposerId === userId;
   const isIncoming = isProposed && session.proposerId !== userId;
 
   const badge = isIncoming
-    ? { bg: '#fff5d8', color: '#8a6d00', label: '⚠ RESPOND' }
+    ? { bg: '#fff5d8', color: '#8a6d00', label: t('dashboard.badge.respond') }
     : isMyInvite
-    ? { bg: m.ink10, color: m.ink50, label: 'PENDING' }
+    ? { bg: m.ink10, color: m.ink50, label: t('dashboard.badge.pending') }
     : session.status === 'ACTIVE'
-    ? { bg: m.accent, color: '#fff', label: '● LIVE' }
-    : { bg: m.ink, color: m.bg, label: 'UPCOMING' };
+    ? { bg: m.accent, color: '#fff', label: t('dashboard.badge.live') }
+    : { bg: m.ink, color: m.bg, label: t('dashboard.badge.upcoming') };
 
   return (
     <div
@@ -259,11 +258,11 @@ function UpcomingRow({ m, session, userId }) {
         <div style={{ fontSize: 13, fontWeight: 500 }}>
           {session.skillName}{' '}
           <span style={{ color: m.ink50, fontFamily: m.mono, fontSize: 11.5 }}>
-            · you {isTeacher ? 'teach' : 'learn'}
+            · {isTeacher ? t('dashboard.youTeach') : t('dashboard.youLearn')}
           </span>
         </div>
         <div style={{ fontSize: 11.5, color: m.ink50, fontFamily: m.mono }}>
-          {isProposed ? 'proposed · ' : ''}{formatWhen(session.scheduledAt)} · {session.durationTokens}h
+          {isProposed ? `${t('dashboard.proposed')} · ` : ''}{formatWhen(session.scheduledAt)} · {session.durationTokens}h
         </div>
       </div>
       <span
@@ -283,7 +282,7 @@ function UpcomingRow({ m, session, userId }) {
   );
 }
 
-function MatchRow({ m, suggestion }) {
+function MatchRow({ m, t, suggestion }) {
   const pct = Math.round(suggestion.totalScore * 100);
   const top = suggestion.breakdown.details
     .slice()
@@ -308,7 +307,7 @@ function MatchRow({ m, suggestion }) {
           user-{suggestion.userId.slice(0, 8)}
         </div>
         <div style={{ fontSize: 11.5, color: m.ink50 }}>
-          ↳ {top?.explanation || 'multi-factor match'}
+          ↳ {top?.explanation || t('dashboard.multiFactor')}
         </div>
       </div>
       <span style={{ fontFamily: m.mono, fontSize: 16, color: m.accent, fontWeight: 500 }}>

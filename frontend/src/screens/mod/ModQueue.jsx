@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/theme.jsx';
 import * as modApi from '../../api/moderation.js';
 import * as usersApi from '../../api/users.js';
@@ -7,16 +8,16 @@ import * as usersApi from '../../api/users.js';
 const MOD_RED = '#d33b3b';
 
 const STATUS_TABS = [
-  { key: 'OPEN',      label: 'Open' },
-  { key: 'RESOLVED',  label: 'Resolved' },
-  { key: 'DISMISSED', label: 'Dismissed' },
-  { key: 'ALL',       label: 'All' },
+  { key: 'OPEN' },
+  { key: 'RESOLVED' },
+  { key: 'DISMISSED' },
+  { key: 'ALL' },
 ];
 
 const ACTIONS = [
-  { key: 'warning', label: 'Issue warning', desc: 'auto-DM to reported user', sanctionType: 'WARNING' },
-  { key: 'suspend', label: 'Suspend 7d',    desc: 'temp account hold',        sanctionType: 'TEMP_BAN' },
-  { key: 'permban', label: 'Permanent ban', desc: 'requires review',          sanctionType: 'PERMANENT_BAN' },
+  { key: 'warning', sanctionType: 'WARNING' },
+  { key: 'suspend', sanctionType: 'TEMP_BAN' },
+  { key: 'permban', sanctionType: 'PERMANENT_BAN' },
 ];
 
 function severity(reason) {
@@ -41,6 +42,7 @@ function timeAgo(iso) {
 
 export default function ModQueue() {
   const { m } = useTheme();
+  const { t } = useTranslation();
 
   const [reports, setReports]         = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -163,27 +165,27 @@ export default function ModQueue() {
     }
   }, [selected, filtered]);
 
-  if (loading) return <div style={{ padding: 40, color: m.ink50, fontFamily: m.mono, fontSize: 13 }}>Loading reports…</div>;
-  if (error)   return <div style={{ padding: 40, color: MOD_RED, fontFamily: m.mono, fontSize: 13 }}>Failed to load reports: {error}</div>;
+  if (loading) return <div style={{ padding: 40, color: m.ink50, fontFamily: m.mono, fontSize: 13 }}>{t('mod.queue.loading')}</div>;
+  if (error)   return <div style={{ padding: 40, color: MOD_RED, fontFamily: m.mono, fontSize: 13 }}>{t('mod.queue.loadErrorPrefix')} {error}</div>;
 
   return (
     <div style={{ padding: '0 40px 24px' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '24px 0 0' }}>
         <div>
-          <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Trust & Safety</div>
-          <h1 style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.025em', margin: 0 }}>Report queue</h1>
+          <div style={{ fontSize: 11, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{t('mod.queue.eyebrow')}</div>
+          <h1 style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.025em', margin: 0 }}>{t('mod.queue.title')}</h1>
         </div>
-        <div style={{ fontFamily: m.mono, fontSize: 12, color: m.ink70 }}>Auto-refresh · 30s</div>
+        <div style={{ fontFamily: m.mono, fontSize: 12, color: m.ink70 }}>{t('mod.queue.autoRefresh')}</div>
       </div>
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, padding: '16px 0' }}>
         {[
-          { l: 'Open reports', v: counts.OPEN,     accent: true },
-          { l: 'Resolved',     v: counts.RESOLVED  },
-          { l: 'Dismissed',    v: counts.DISMISSED },
-          { l: 'Total',        v: counts.ALL        },
+          { l: t('mod.queue.stats.open'),      v: counts.OPEN,     accent: true },
+          { l: t('mod.queue.stats.resolved'),  v: counts.RESOLVED  },
+          { l: t('mod.queue.stats.dismissed'), v: counts.DISMISSED },
+          { l: t('mod.queue.stats.total'),     v: counts.ALL       },
         ].map((s) => (
           <div key={s.l} style={{ background: m.panel, border: `1px solid ${m.ink10}`, borderRadius: 10, padding: '14px 16px' }}>
             <div style={{ fontSize: 10.5, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{s.l}</div>
@@ -198,23 +200,23 @@ export default function ModQueue() {
         <div style={{ background: m.panel, border: `1px solid ${m.ink10}`, borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: `1px solid ${m.ink10}` }}>
             <div style={{ display: 'flex', gap: 4, fontSize: 12, fontFamily: m.mono }}>
-              {STATUS_TABS.map(({ key, label }) => (
+              {STATUS_TABS.map(({ key }) => (
                 <button key={key} type="button" onClick={() => setActiveTab(key)} style={{
                   padding: '5px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
                   background: activeTab === key ? m.ink10 : 'transparent',
                   color: activeTab === key ? m.ink : m.ink70,
                   fontFamily: m.mono, fontSize: 12,
                 }}>
-                  {label}{counts[key] != null ? ` ${counts[key]}` : ''}
+                  {t(`mod.queue.filter.${key}`)}{counts[key] != null ? ` ${counts[key]}` : ''}
                 </button>
               ))}
             </div>
-            <span style={{ fontSize: 12, fontFamily: m.mono, color: m.ink70 }}>severity ↓</span>
+            <span style={{ fontSize: 12, fontFamily: m.mono, color: m.ink70 }}>{t('mod.queue.severitySort')}</span>
           </div>
 
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {filtered.length === 0 && (
-              <div style={{ padding: 24, color: m.ink50, fontSize: 13, fontFamily: m.mono }}>No reports.</div>
+              <div style={{ padding: 24, color: m.ink50, fontSize: 13, fontFamily: m.mono }}>{t('mod.queue.empty')}</div>
             )}
             {[...filtered].sort((a, b) => {
               const order = { high: 0, med: 1, low: 2 };
@@ -255,6 +257,7 @@ export default function ModQueue() {
         {selected ? (
           <DetailPanel
             m={m}
+            t={t}
             report={selected}
             profiles={profiles}
             notes={notes}
@@ -268,7 +271,7 @@ export default function ModQueue() {
           />
         ) : (
           <div style={{ background: m.panel, border: `1px solid ${m.ink10}`, borderRadius: 12, display: 'grid', placeItems: 'center', color: m.ink50, fontFamily: m.mono, fontSize: 13 }}>
-            Select a report
+            {t('mod.queue.selectPrompt')}
           </div>
         )}
       </div>
@@ -276,7 +279,7 @@ export default function ModQueue() {
   );
 }
 
-function DetailPanel({ m, report, profiles, notes, setNotes, actions, setActions, submitting, submitError, onResolve, onDismiss }) {
+function DetailPanel({ m, t, report, profiles, notes, setNotes, actions, setActions, submitting, submitError, onResolve, onDismiss }) {
   const sev      = severity(report.reason);
   const reporter = profiles[report.reporterId];
   const reported = profiles[report.reportedUserId];
@@ -285,7 +288,7 @@ function DetailPanel({ m, report, profiles, notes, setNotes, actions, setActions
     <div style={{ background: m.panel, border: `1px solid ${m.ink10}`, borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
         <span style={{ fontFamily: m.mono, fontSize: 11, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Report · {report.id.slice(0, 8).toUpperCase()}
+          {t('mod.queue.reportPrefix')} · {report.id.slice(0, 8).toUpperCase()}
         </span>
         <span style={{
           fontFamily: m.mono, fontSize: 10, padding: '3px 8px', borderRadius: 4,
@@ -294,22 +297,25 @@ function DetailPanel({ m, report, profiles, notes, setNotes, actions, setActions
         }}>{sev} · {report.reason.replace(/_/g, ' ')}</span>
       </div>
       <h2 style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', margin: '6px 0 4px' }}>
-        {reporter?.displayName ?? 'Unknown'} reported {reported?.displayName ?? 'Unknown'}
+        {t('mod.queue.reportedSentence', {
+          reporter: reporter?.displayName ?? t('mod.queue.unknownUser'),
+          reported: reported?.displayName ?? t('mod.queue.unknownUser'),
+        })}
       </h2>
       <div style={{ fontSize: 12.5, color: m.ink50, fontFamily: m.mono, marginBottom: 14 }}>
-        Filed {timeAgo(report.createdAt)} ago · {new Date(report.createdAt).toLocaleDateString()}
+        {t('mod.queue.filedAgo', { ago: timeAgo(report.createdAt), date: new Date(report.createdAt).toLocaleDateString() })}
       </div>
 
       {/* Parties */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-        <PartyCard m={m} label="Reporter" profile={reporter} userId={report.reporterId} />
-        <PartyCard m={m} label="Reported" profile={reported} userId={report.reportedUserId} warn />
+        <PartyCard m={m} label={t('mod.queue.reporter')} profile={reporter} userId={report.reporterId} />
+        <PartyCard m={m} label={t('mod.queue.reported')} profile={reported} userId={report.reportedUserId} warn />
       </div>
 
       {/* Statement */}
       {report.comment && (
         <>
-          <div style={{ fontSize: 10.5, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Reporter's statement</div>
+          <div style={{ fontSize: 10.5, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{t('mod.queue.statement')}</div>
           <div style={{ padding: 12, background: m.bg, border: `1px solid ${m.ink10}`, borderRadius: 8, fontSize: 13, lineHeight: 1.5, marginBottom: 14, fontStyle: 'italic' }}>
             "{report.comment}"
           </div>
@@ -317,17 +323,17 @@ function DetailPanel({ m, report, profiles, notes, setNotes, actions, setActions
       )}
 
       {/* Context */}
-      <div style={{ fontSize: 10.5, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Context</div>
+      <div style={{ fontSize: 10.5, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{t('mod.queue.context')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, color: m.ink70, fontFamily: m.mono, marginBottom: 14 }}>
-        <div>• Reason: <span style={{ color: m.ink }}>{report.reason.replace(/_/g, ' ')}</span></div>
-        <div>• Status: <span style={{ color: m.ink }}>{report.status}</span></div>
-        <div>• Session report ID: <span style={{ color: m.ink }}>{report.sourceId.slice(0, 12)}…</span></div>
+        <div>• {t('mod.queue.contextReason')} <span style={{ color: m.ink }}>{report.reason.replace(/_/g, ' ')}</span></div>
+        <div>• {t('mod.queue.contextStatus')} <span style={{ color: m.ink }}>{report.status}</span></div>
+        <div>• {t('mod.queue.contextSession')} <span style={{ color: m.ink }}>{report.sourceId.slice(0, 12)}…</span></div>
       </div>
 
       {/* Resolution (only for OPEN) */}
       {report.status === 'OPEN' && (
         <div style={{ marginTop: 'auto', borderTop: `1px solid ${m.ink10}`, paddingTop: 14 }}>
-          <div style={{ fontSize: 10.5, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Resolution</div>
+          <div style={{ fontSize: 10.5, fontFamily: m.mono, color: m.ink50, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{t('mod.queue.resolution')}</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginBottom: 10 }}>
             {ACTIONS.map((a) => (
               <label key={a.key} style={{
@@ -344,8 +350,8 @@ function DetailPanel({ m, report, profiles, notes, setNotes, actions, setActions
                   style={{ width: 14, height: 14, accentColor: m.accent }}
                 />
                 <span>
-                  <div style={{ fontWeight: 500, color: actions[a.key] ? m.accent : m.ink }}>{a.label}</div>
-                  <div style={{ fontSize: 11, color: m.ink50, fontFamily: m.mono, marginTop: 1 }}>{a.desc}</div>
+                  <div style={{ fontWeight: 500, color: actions[a.key] ? m.accent : m.ink }}>{t(`mod.queue.actions.${a.key}`)}</div>
+                  <div style={{ fontSize: 11, color: m.ink50, fontFamily: m.mono, marginTop: 1 }}>{t(`mod.queue.actions.${a.key}Desc`)}</div>
                 </span>
               </label>
             ))}
@@ -353,7 +359,7 @@ function DetailPanel({ m, report, profiles, notes, setNotes, actions, setActions
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Moderator notes…"
+            placeholder={t('mod.queue.notesPlaceholder')}
             style={{
               width: '100%', padding: '10px 12px', background: m.bg,
               color: m.ink, border: `1px solid ${m.ink20}`, borderRadius: 8,
@@ -369,7 +375,7 @@ function DetailPanel({ m, report, profiles, notes, setNotes, actions, setActions
               padding: 11, borderRadius: 7, fontSize: 13, fontFamily: m.font,
               fontWeight: 500, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.6 : 1,
             }}>
-              {submitting ? 'Saving…' : 'Resolve & notify both →'}
+              {submitting ? t('mod.queue.saving') : t('mod.queue.resolveCta')}
             </button>
             <button type="button" onClick={onDismiss} disabled={submitting} style={{
               background: 'transparent', color: m.ink,
@@ -377,7 +383,7 @@ function DetailPanel({ m, report, profiles, notes, setNotes, actions, setActions
               borderRadius: 7, fontSize: 13, fontFamily: m.font,
               cursor: submitting ? 'not-allowed' : 'pointer',
             }}>
-              Dismiss
+              {t('mod.queue.dismissCta')}
             </button>
           </div>
         </div>
@@ -385,7 +391,7 @@ function DetailPanel({ m, report, profiles, notes, setNotes, actions, setActions
 
       {report.status !== 'OPEN' && (
         <div style={{ marginTop: 'auto', borderTop: `1px solid ${m.ink10}`, paddingTop: 14, color: m.ink50, fontFamily: m.mono, fontSize: 12 }}>
-          Report {report.status.toLowerCase()} · {report.resolvedAt ? new Date(report.resolvedAt).toLocaleDateString() : ''}
+          {t('mod.queue.reportClosed', { status: report.status.toLowerCase(), date: report.resolvedAt ? new Date(report.resolvedAt).toLocaleDateString() : '' })}
         </div>
       )}
     </div>

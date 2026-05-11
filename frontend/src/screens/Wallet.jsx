@@ -1,38 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/theme.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import * as sessionsApi from '../api/sessions.js';
 import { formatDateShort, formatTime } from '../utils/format.js';
 
-// /wallet — token economy view.
-// Adapted from frontend/directions/minimal-account.jsx · MinWallet.
-//
-// Backend model:
-//   - balance       — tokens you can spend right now
-//   - heldBalance   — tokens locked while a session is SCHEDULED/ACTIVE
-//                     (released back on CANCELLED, transferred on COMPLETED)
-//   - total = balance + heldBalance
-//
-// Transaction types:
-//   CREDIT   — initial signup bonus, or earned from teaching
-//   DEBIT    — reserved for future use; not commonly used today
-//   HOLD     — learner books session; tokens move balance → heldBalance
-//   RELEASE  — session cancelled; held tokens go back to balance
-//   TRANSFER — session COMPLETED; learner's held → teacher's balance
-//
-// Lifetime "earned" / "spent" stats are computed on the client by walking
-// the visible transactions list. For a thesis MVP this is fine; in
-// production you'd add aggregate endpoints in session-service.
+// /wallet — token economy view. See section docs/frontend-guide.md for the
+// background of how HOLD / TRANSFER / RELEASE map to the session lifecycle.
 
 const TX_FILTERS = [
-  { key: 'all',     label: 'All',     types: null },
-  { key: 'earned',  label: 'Earned',  types: ['CREDIT', 'TRANSFER', 'RELEASE'] },
-  { key: 'spent',   label: 'Spent',   types: ['HOLD', 'DEBIT'] },
+  { key: 'all',    labelKey: 'wallet.filter.all',    types: null },
+  { key: 'earned', labelKey: 'wallet.filter.earned', types: ['CREDIT', 'TRANSFER', 'RELEASE'] },
+  { key: 'spent',  labelKey: 'wallet.filter.spent',  types: ['HOLD', 'DEBIT'] },
 ];
 
 export default function Wallet() {
   const { m } = useTheme();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const userId = user?.sub;
 
@@ -69,42 +54,39 @@ export default function Wallet() {
   const visible = useMemo(() => {
     const f = TX_FILTERS.find((x) => x.key === filter);
     if (!f?.types) return transactions;
-    return transactions.filter((t) => f.types.includes(t.type));
+    return transactions.filter((tx) => f.types.includes(tx.type));
   }, [transactions, filter]);
 
-  // Lifetime stats from visible transactions (best-effort; pagination caveat in §6.x).
   const lifetime = useMemo(() => {
     let earned = 0, spent = 0;
-    for (const t of transactions) {
-      if (['CREDIT', 'TRANSFER', 'RELEASE'].includes(t.type)) earned += t.amount;
-      else if (['HOLD', 'DEBIT'].includes(t.type)) spent += t.amount;
+    for (const tx of transactions) {
+      if (['CREDIT', 'TRANSFER', 'RELEASE'].includes(tx.type)) earned += tx.amount;
+      else if (['HOLD', 'DEBIT'].includes(tx.type)) spent += tx.amount;
     }
     return { earned, spent };
   }, [transactions]);
 
-  if (loading) return <Centered m={m} title="Loading wallet…" />;
-  if (error) return <Centered m={m} title="Couldn't load wallet" subtitle={error} />;
+  if (loading) return <Centered m={m} title={t('wallet.loading')} />;
+  if (error) return <Centered m={m} title={t('wallet.loadError')} subtitle={error} />;
 
   return (
     <div style={{ padding: '24px 40px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14, marginBottom: 22 }}>
-        <BalanceCard m={m} balance={balance} />
-        <LifetimeCard m={m} lifetime={lifetime} />
+        <BalanceCard m={m} t={t} balance={balance} />
+        <LifetimeCard m={m} t={t} lifetime={lifetime} />
       </div>
       <TransactionsTable
         m={m}
+        t={t}
         transactions={visible}
         filter={filter}
         onFilter={setFilter}
-        currentUserId={userId}
       />
     </div>
   );
 }
 
-// ─── Balance card ───────────────────────────────────────────────
-
-function BalanceCard({ m, balance }) {
+function BalanceCard({ m, t, balance }) {
   return (
     <div
       style={{
@@ -114,7 +96,7 @@ function BalanceCard({ m, balance }) {
         padding: 22,
       }}
     >
-      <Eyebrow m={m}>Balance</Eyebrow>
+      <Eyebrow m={m}>{t('wallet.balanceEyebrow')}</Eyebrow>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
         <span
           style={{
@@ -129,17 +111,17 @@ function BalanceCard({ m, balance }) {
           {balance.balance}
         </span>
         <span style={{ fontSize: 14, color: m.ink70, fontFamily: m.mono }}>
-          credits · 1 credit = 1 hour
+          {t('wallet.balanceUnit')}
         </span>
       </div>
 
       <div style={{ display: 'flex', gap: 14, marginTop: 18, fontFamily: m.mono, fontSize: 12, color: m.ink70 }}>
         <span>
-          <span style={{ color: m.ink }}>{balance.heldBalance}</span> in escrow
+          <span style={{ color: m.ink }}>{balance.heldBalance}</span> {t('wallet.inEscrow')}
         </span>
         <span style={{ color: m.ink20 }}>·</span>
         <span>
-          <span style={{ color: m.ink }}>{balance.total}</span> total (avail + held)
+          <span style={{ color: m.ink }}>{balance.total}</span> {t('wallet.totalLabel')}
         </span>
       </div>
 
@@ -158,7 +140,7 @@ function BalanceCard({ m, balance }) {
             textDecoration: 'none',
           }}
         >
-          Spend on a swap →
+          {t('wallet.spendCta')}
         </Link>
         <Link
           to="/skills"
@@ -173,40 +155,36 @@ function BalanceCard({ m, balance }) {
             textDecoration: 'none',
           }}
         >
-          Earn by teaching
+          {t('wallet.earnCta')}
         </Link>
       </div>
     </div>
   );
 }
 
-// ─── Lifetime stats ─────────────────────────────────────────────
-
-function LifetimeCard({ m, lifetime }) {
+function LifetimeCard({ m, t, lifetime }) {
   return (
     <div style={{ background: m.panel, border: `1px solid ${m.ink10}`, borderRadius: 12, padding: 18 }}>
-      <Eyebrow m={m}>Lifetime earned</Eyebrow>
+      <Eyebrow m={m}>{t('wallet.lifetimeEarned')}</Eyebrow>
       <div style={{ fontSize: 32, fontFamily: m.mono, fontWeight: 500, letterSpacing: '-0.02em' }}>
         {lifetime.earned}
       </div>
       <div style={{ fontSize: 12, color: m.ink50, marginTop: 4 }}>
-        from teaching, signup bonus, and refunds
+        {t('wallet.lifetimeEarnedBody')}
       </div>
       <div style={{ height: 1, background: m.ink10, margin: '16px 0' }} />
-      <Eyebrow m={m}>Lifetime spent</Eyebrow>
+      <Eyebrow m={m}>{t('wallet.lifetimeSpent')}</Eyebrow>
       <div style={{ fontSize: 32, fontFamily: m.mono, fontWeight: 500, letterSpacing: '-0.02em' }}>
         {lifetime.spent}
       </div>
       <div style={{ fontSize: 12, color: m.ink50, marginTop: 4 }}>
-        from holds on sessions you booked
+        {t('wallet.lifetimeSpentBody')}
       </div>
     </div>
   );
 }
 
-// ─── Transactions table ─────────────────────────────────────────
-
-function TransactionsTable({ m, transactions, filter, onFilter }) {
+function TransactionsTable({ m, t, transactions, filter, onFilter }) {
   return (
     <div style={{ background: m.panel, border: `1px solid ${m.ink10}`, borderRadius: 12, overflow: 'hidden' }}>
       <div
@@ -218,7 +196,7 @@ function TransactionsTable({ m, transactions, filter, onFilter }) {
           borderBottom: `1px solid ${m.ink10}`,
         }}
       >
-        <div style={{ fontSize: 13, fontWeight: 500 }}>Transactions</div>
+        <div style={{ fontSize: 13, fontWeight: 500 }}>{t('wallet.txTitle')}</div>
         <div style={{ display: 'flex', gap: 6, fontSize: 12, fontFamily: m.mono }}>
           {TX_FILTERS.map((f) => (
             <button
@@ -236,7 +214,7 @@ function TransactionsTable({ m, transactions, filter, onFilter }) {
                 fontSize: 12,
               }}
             >
-              {f.label}
+              {t(f.labelKey)}
             </button>
           ))}
         </div>
@@ -244,14 +222,15 @@ function TransactionsTable({ m, transactions, filter, onFilter }) {
 
       {transactions.length === 0 ? (
         <div style={{ padding: 32, textAlign: 'center', color: m.ink50, fontSize: 13.5 }}>
-          No transactions match this filter.
+          {t('wallet.txEmpty')}
         </div>
       ) : (
-        transactions.map((t, i) => (
+        transactions.map((tx, i) => (
           <TransactionRow
-            key={t.id}
+            key={tx.id}
             m={m}
-            tx={t}
+            t={t}
+            tx={tx}
             isLast={i === transactions.length - 1}
           />
         ))
@@ -260,7 +239,7 @@ function TransactionsTable({ m, transactions, filter, onFilter }) {
   );
 }
 
-function TransactionRow({ m, tx, isLast }) {
+function TransactionRow({ m, t, tx, isLast }) {
   const sign = txSign(tx.type);
   const prefix = sign > 0 ? '+' : sign < 0 ? '−' : '';
   const isEarn = sign > 0;
@@ -300,11 +279,11 @@ function TransactionRow({ m, tx, isLast }) {
       </div>
       <div>
         <div style={{ fontSize: 13.5 }}>
-          {tx.description || HUMAN_LABEL[tx.type] || tx.type}
+          {tx.description || t(`wallet.txLabel.${tx.type}`, tx.type)}
         </div>
         <div style={{ fontSize: 11.5, color: m.ink50, fontFamily: m.mono }}>
           {tx.type}
-          {tx.referenceId && ` · ref ${tx.referenceId.slice(0, 8)}`}
+          {tx.referenceId && ` · ${t('wallet.ref')} ${tx.referenceId.slice(0, 8)}`}
         </div>
       </div>
       <div
@@ -322,8 +301,6 @@ function TransactionRow({ m, tx, isLast }) {
   );
 }
 
-// ─── Lookups ────────────────────────────────────────────────────
-
 const ICON_BY_TYPE = {
   CREDIT:   '↑',
   TRANSFER: '↑',
@@ -332,21 +309,11 @@ const ICON_BY_TYPE = {
   DEBIT:    '↓',
 };
 
-const HUMAN_LABEL = {
-  CREDIT:   'Credit',
-  TRANSFER: 'Earned from session',
-  RELEASE:  'Held tokens released',
-  HOLD:     'Held for upcoming session',
-  DEBIT:    'Debit',
-};
-
 function txSign(type) {
   if (type === 'CREDIT' || type === 'TRANSFER' || type === 'RELEASE') return +1;
   if (type === 'HOLD' || type === 'DEBIT') return -1;
   return 0;
 }
-
-// ─── Atoms ──────────────────────────────────────────────────────
 
 function Eyebrow({ m, children }) {
   return (

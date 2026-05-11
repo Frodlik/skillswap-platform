@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/theme.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import * as authApi from '../api/auth.js';
@@ -18,6 +19,7 @@ import * as authApi from '../api/auth.js';
 
 export default function Login() {
   const { m } = useTheme();
+  const { t } = useTranslation();
   const { isAuthenticated, login: setAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -96,8 +98,8 @@ export default function Login() {
           }}
         >
           {[
-            ['register', 'Create account'],
-            ['login', 'Sign in'],
+            ['register', t('login.tabRegister')],
+            ['login', t('login.tabLogin')],
           ].map(([id, label]) => (
             <button
               key={id}
@@ -132,26 +134,25 @@ export default function Login() {
         >
           {tab === 'register' ? (
             <>
-              Start trading{' '}
-              <span style={{ fontStyle: 'italic', color: m.accent }}>skills.</span>
+              {t('login.headlineRegister')}{' '}
+              <span style={{ fontStyle: 'italic', color: m.accent }}>{t('login.headlineRegisterAccent')}</span>
             </>
           ) : (
             <>
-              Welcome <span style={{ fontStyle: 'italic', color: m.accent }}>back.</span>
+              {t('login.headlineLogin')}{' '}
+              <span style={{ fontStyle: 'italic', color: m.accent }}>{t('login.headlineLoginAccent')}</span>
             </>
           )}
         </h1>
         <p style={{ fontSize: 14.5, color: m.ink70, margin: 0, marginBottom: 32 }}>
-          {tab === 'register'
-            ? 'Earn a credit each hour you teach. Spend it learning anything else.'
-            : 'Pick up where you left off.'}
+          {tab === 'register' ? t('login.subtitleRegister') : t('login.subtitleLogin')}
         </p>
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
           {error && <ErrorBanner m={m} message={error} />}
 
-          <Field m={m} label="Email" htmlFor="email">
+          <Field m={m} label={t('login.email')} htmlFor="email">
             <Input
               m={m}
               id="email"
@@ -165,9 +166,9 @@ export default function Login() {
 
           <Field
             m={m}
-            label="Password"
+            label={t('login.password')}
             htmlFor="password"
-            hint={tab === 'register' ? 'min 8 characters' : null}
+            hint={tab === 'register' ? t('login.hintMinChars') : null}
           >
             <Input
               m={m}
@@ -202,33 +203,33 @@ export default function Login() {
           >
             {submitting
               ? tab === 'register'
-                ? 'Creating account...'
-                : 'Signing in...'
+                ? t('login.submittingRegister')
+                : t('login.submittingLogin')
               : tab === 'register'
-                ? 'Create account →'
-                : 'Sign in →'}
+                ? t('login.submitRegister')
+                : t('login.submitLogin')}
           </button>
         </form>
 
         <div style={{ fontSize: 12.5, color: m.ink50, fontFamily: m.mono }}>
           {tab === 'register' ? (
             <>
-              Already a member?{' '}
+              {t('login.alreadyMember')}{' '}
               <span
                 onClick={() => switchTab('login')}
                 style={{ color: m.accent, cursor: 'pointer' }}
               >
-                Sign in
+                {t('login.alreadyMemberCta')}
               </span>
             </>
           ) : (
             <>
-              New here?{' '}
+              {t('login.newHere')}{' '}
               <span
                 onClick={() => switchTab('register')}
                 style={{ color: m.accent, cursor: 'pointer' }}
               >
-                Create an account
+                {t('login.newHereCta')}
               </span>
             </>
           )}
@@ -236,7 +237,7 @@ export default function Login() {
       </div>
 
       {/* ─── RIGHT: marketing visual ─────────────────────────── */}
-      <SidePanel m={m} />
+      <SidePanel m={m} t={t} />
     </div>
   );
 }
@@ -332,7 +333,7 @@ function ErrorBanner({ m, message }) {
   );
 }
 
-function SidePanel({ m }) {
+function SidePanel({ m, t }) {
   return (
     <div
       style={{
@@ -353,12 +354,12 @@ function SidePanel({ m }) {
           justifyContent: 'space-between',
         }}
       >
-        <span>// what you get</span>
+        <span>{t('login.marketingEyebrow')}</span>
         <span>v0.1</span>
       </div>
       <div>
         <div style={{ fontFamily: m.mono, fontSize: 12, color: m.accent, marginBottom: 10 }}>
-          +1 credit / hr taught
+          {t('login.marketingCredit')}
         </div>
         <h2
           style={{
@@ -369,19 +370,18 @@ function SidePanel({ m }) {
             lineHeight: 1.02,
           }}
         >
-          One <span style={{ fontStyle: 'italic' }}>simple</span>
+          {t('login.marketingHeadline1')} <span style={{ fontStyle: 'italic' }}>{t('login.marketingHeadline1Italic')}</span>
           <br />
-          economy.
+          {t('login.marketingHeadline2')}
           <br />
-          <span style={{ color: m.accent }}>Hours.</span>
+          <span style={{ color: m.accent }}>{t('login.marketingHeadline3')}</span>
         </h2>
         <p style={{ fontSize: 16, lineHeight: 1.55, color: m.ink70, marginTop: 22, maxWidth: 380 }}>
-          Every hour you teach earns you a credit. Spend it on anything else — Italian, jazz piano,
-          sourdough. The exchange is the price.
+          {t('login.marketingBody')}
         </p>
       </div>
       <div style={{ fontFamily: m.mono, fontSize: 11, color: m.ink50 }}>
-        ↳ Diploma project · 2026
+        {t('login.marketingFooter')}
       </div>
     </div>
   );
