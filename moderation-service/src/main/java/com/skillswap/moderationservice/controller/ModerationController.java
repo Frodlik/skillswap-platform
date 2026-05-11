@@ -10,6 +10,8 @@ import com.skillswap.moderationservice.dto.response.ReportResponse;
 import com.skillswap.moderationservice.dto.response.SanctionResponse;
 import com.skillswap.moderationservice.service.ReportService;
 import com.skillswap.moderationservice.service.SanctionService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/moderation")
 @AllArgsConstructor
+@Tag(name = "Moderation", description = "Sanctions, content reports, takedowns (MODERATOR / ADMIN only)")
+@SecurityRequirement(name = "bearerAuth")
 public class ModerationController {
 
     private final SanctionService sanctionService;

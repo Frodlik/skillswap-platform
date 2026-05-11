@@ -87,11 +87,21 @@ rate-limit:
   api-requests-per-minute: ${RATE_LIMIT_API_RPM:200}
 
 springdoc:
+  # api-docs must stay enabled — springdoc 2.x ties the swagger-ui resource
+  # handlers to this flag, so flipping it off (as the gateway used to) also
+  # 404s /swagger-ui.html. The gateway's own spec at /v3/api-docs is nearly
+  # empty after the excludes below; the UI's dropdown points at the per-
+  # service /api-docs/{name} routes anyway.
   api-docs:
-    enabled: false
+    enabled: true
+    path: /v3/api-docs
+  paths-to-exclude:
+    - /fallback/**
+    - /actuator/**
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
+    disable-swagger-default-url: true
     urls:
       - name: 1. auth-service
         url: /api-docs/auth
@@ -103,3 +113,5 @@ springdoc:
         url: /api-docs/matching
       - name: 5. session-service
         url: /api-docs/session
+      - name: 6. moderation-service
+        url: /api-docs/moderation

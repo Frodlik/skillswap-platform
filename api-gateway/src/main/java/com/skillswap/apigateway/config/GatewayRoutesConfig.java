@@ -115,4 +115,13 @@ class GatewayRoutesConfig {
                 .filter(lb("session-service"))
                 .build();
     }
+
+    @Bean
+    RouterFunction<ServerResponse> moderationDocsRoute() {
+        return route("moderation-docs")
+                .route(path("/api-docs/moderation"), http())
+                .before(setPath("/v3/api-docs"))
+                .filter(lb("moderation-service"))
+                .build();
+    }
 }
