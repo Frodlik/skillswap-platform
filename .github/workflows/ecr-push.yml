@@ -1,4 +1,4 @@
-name: Build, Push & Deploy to ECS
+name: Build & Push to ECR
 
 on:
   push:
@@ -25,10 +25,9 @@ permissions:
 env:
   AWS_REGION: eu-north-1
   ECR_REGISTRY: 695875594472.dkr.ecr.eu-north-1.amazonaws.com
-  ECS_CLUSTER: skillswap-prod
 
 jobs:
-  build-push-deploy:
+  build-push:
     name: ${{ matrix.service }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -85,18 +84,7 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
 
-      - name: Render ECS task definition with new image
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: .aws/task-definitions/${{ matrix.service }}.json
-          container-name: ${{ matrix.service }}
-          image: ${{ env.ECR_REGISTRY }}/skillswap/${{ matrix.service }}:${{ github.sha }}
-
-      - name: Deploy to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ matrix.service }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: false
+      # ECS deploy step removed temporarily — re-add after IAM (ecs:RegisterTaskDefinition,
+      # ecs:UpdateService, iam:PassRole) and 9 ECS Services are configured.
+      # See .aws/task-definitions/ for the JSON templates and git history of this file
+      # for the original "Render ECS task definition" + "Deploy to ECS" steps.
